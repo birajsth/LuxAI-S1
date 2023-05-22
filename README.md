@@ -39,7 +39,7 @@ Train agents with experiment tracking in weight&biases:
 poetry run python -m luxai.luxrl.ma.train_pfsp --team-sprit 0.2 --use-wandb
 ```
 
-For more configuration, check
+For more configurations, check
 [config.py](https://github.com/birajsth/LuxAI-S1/blob/main/luxai/luxrl/config.py)
 ##
 
