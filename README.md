@@ -53,7 +53,7 @@ We structure the observation for the learning agent into two main components:
 Scalar features include information about the game state, team state and individual agent information which can be city tile or unit. Some additional information including available action that the agent is able to perform is also included in the scalar feature.
 2.	Spatial Features:
 Spatial feature is a matrix representing the game map which consist of information about the resources and game entities.  LuxAI map are of  variable size ranging from 12x12 to 32x32,  but the spatial range for the individual agent are cropped to be of 12x12 size. The individual agent make decision based on their local spatial information but does have knowledge about other game stages and team information.
-![](https://github.com/birajsth/LuxAI-S1/blob/main/src/spatial%20range.jpg)
+![](https://github.com/birajsth/LuxAI-S1/blob/main/src/spatial_range.jpg)
 ### Action Spaces
 Action space refers to the set of actions that an agent can take in the environment.  At each turn, the game-playing agents are required to provide actions for the units and city tiles. In LuxAI, units and city tiles can perform actions each turn given certain conditions. In general, all actions are simultaneously applied and are validated against the state of the game at the start of a turn.  
 LuxAI includes both discrete action such as move action and continuous action: the amount of resource to transfer. For simplicity, all the action are mapped to be discrete action.
@@ -88,7 +88,7 @@ In the Critic Network, the core is an MLP layer. It also takes the embedded scal
 The Actor Network has four heads: action type head, move direction head, transfer direction head, and transfer amount head. Each head consists of multiple linear layers with ReLU activation. They take the embedding from the core as input, along with additional information such as available actions and the previous actions. The available actions are used for action masking, as certain actions depend on the game state. The action type head determines the action to be performed, which is then used by the other three heads to choose their respective actions.
 
 The Critic Network includes a baseline head, which consists of linear layers with ReLU activation. It takes the embedding from the core as input and outputs a value representing the state's value.
-![](https://github.com/birajsth/LuxAI-S1/blob/main/src/detail%20arch.jpg)
+![](https://github.com/birajsth/LuxAI-S1/blob/main/src/detailed_arch.jpg)
 
 
 ## Reinforcement Learning Algorithm
