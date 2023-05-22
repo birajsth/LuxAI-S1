@@ -52,27 +52,18 @@ def main(args):
     run = None
     if args.use_wandb:
         import wandb
-        if args.wandb_run_id:
-            run = wandb.init(
-                project=args.wandb_project_name,
-                id=args.wandb_run_id,
-                resume="allow",
-                config=vars(args),
-                monitor_gym=True, 
-                save_code=False, 
-            )
-            print(f"Resumed run {args.wandb_run_id}")
-        else:
-            run = wandb.init(
-                project=args.wandb_project_name,
-                entity=args.wandb_entity,
-                sync_tensorboard=False,
-                config=vars(args),
-                name=run_name,
-                monitor_gym=True,
-                save_code=True,
-            )
-    
+        run = wandb.init(
+            project=args.wandb_project_name,
+            entity=args.wandb_entity,
+            id=args.wandb_run_id,
+            resume="allow",
+            sync_tensorboard=False,
+            config=vars(args),
+            name=run_name,
+            monitor_gym=True,
+            save_code=True,
+        )
+
 
     # seed
     # TRY NOT TO MODIFY: seeding

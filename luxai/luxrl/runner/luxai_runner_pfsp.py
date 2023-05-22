@@ -148,7 +148,7 @@ class LuxAIRunner(Runner):
             self.buffer.reset()
             self.buffer_opponent.reset()
 
-            if self.update % 100 == 0
+            if self.update % 100 == 0:
                 # checkpoint to update opponent agent
                 self.agent_checkpoint()
             
