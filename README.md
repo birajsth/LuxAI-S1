@@ -15,6 +15,7 @@ poetry install
 ```
 Needs to be manually installed:
 ```
+poetry shell
 pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
 pip3 install gym=="0.22.0" stable-baselines3
 ```
