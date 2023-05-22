@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "luxai"
+version = "0.1.0"
+description = ""
+authors = ["birajsth <sthbiraj@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.12"
+pytest = "^7.3.1"
+numpy = "^1.24.2"
+wandb = "^0.15.0"
+tensorboard = "^2.12.2"
+setuptools = "65.5.0"
+torch="^2.0.0"
+scipy = "1.10.1"
+portalocker = "^2.7.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
