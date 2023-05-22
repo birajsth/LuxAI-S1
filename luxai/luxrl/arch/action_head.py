@@ -1,18 +1,12 @@
 " Action Type Head."
 
-import random
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions.categorical import Categorical
 
-from .libs.resblock import ResBlock1D
-from .libs.glu import GLU
-
-from .libs import utils as L
 from .libs.hyper_parameters import Arch_Hyper_Parameters as AHP
-from .libs.hyper_parameters import Scalar_Feature_Size as SFS
 from .libs.hyper_parameters import Action_Size as AS
 
 
@@ -23,27 +17,28 @@ class ActionHead(nn.Module):
     '''
     Inputs: core_output, available_actions
     Outputs:
-        action_type_logits - The logits corresponding to the probabilities of taking each action
+        action_log_prob - The log probabilities of taking each action
+        action entropy - The entropy in action probabilities 
         action_type - The action_type sampled from the action_type_logits
     '''
 
-    def __init__(self, core_dim=AHP.core_hidden_dim, original_64=AHP.original_64,
-                 original_128=AHP.original_128,  
+    def __init__(self, core_dim=AHP.core_hidden_dim,
+                 hidden_size=AHP.original_128,  
                  use_action_mask=AHP.use_action_type_mask):
         super().__init__()
 
         self._use_action_mask = use_action_mask
     
-        self.embed_fc_2 = nn.Linear(core_dim, original_128) 
-        self.hidden_fc_1 = nn.Linear(original_128, original_128)
-        self.hidden_fc_2 = nn.Linear(original_128, original_128)
-        self.hidden_fc_3 = nn.Linear(original_128, original_128)
-        self.hidden_fc_4 = nn.Linear(original_128, original_128)
+        self.embed_fc = nn.Linear(core_dim, hidden_size) 
+        self.hidden_fc_1 = nn.Linear(hidden_size, hidden_size)
+        self.hidden_fc_2 = nn.Linear(hidden_size, hidden_size)
+        self.hidden_fc_3 = nn.Linear(hidden_size, hidden_size)
+        self.hidden_fc_4 = nn.Linear(hidden_size, hidden_size)
 
-        self.out_action_type = nn.Linear(original_128, AS.num_action_types)
-        self.out_move_direction = nn.Linear(original_128, AS.num_move_directions)
-        self.out_transfer_direction = nn.Linear(original_128, AS.num_transfer_directions)
-        self.out_transfer_amount = nn.Linear(original_128, AS.num_transfer_amounts)
+        self.out_action_type = nn.Linear(hidden_size, AS.num_action_types)
+        self.out_move_direction = nn.Linear(hidden_size, AS.num_move_directions)
+        self.out_transfer_direction = nn.Linear(hidden_size, AS.num_transfer_directions)
+        self.out_transfer_amount = nn.Linear(hidden_size, AS.num_transfer_amounts)
 
     
 
@@ -54,7 +49,7 @@ class ActionHead(nn.Module):
         available_transfer_direction = available_actions[:, AS.num_action_types + AS.num_move_directions: AS.num_action_types + AS.num_move_directions + AS.num_transfer_directions]
         available_transfer_amount = available_actions[:, AS.num_action_types + AS.num_move_directions + AS.num_transfer_directions:]
         
-        x = F.relu(self.embed_fc_2(core_output))
+        x = F.relu(self.embed_fc(core_output))
 
         x_action_type = F.relu(self.hidden_fc_1(x))
         x_move_direction = F.relu(self.hidden_fc_2(x))
@@ -66,8 +61,7 @@ class ActionHead(nn.Module):
         # inspired by the DI-star project, in action_type_head
         if self._use_action_mask:
             action_type_mask = available_action_type.bool()
-            if action is not None:
-                action = action - AS.num_unit_actions if self.output_size == AS.num_citytile_actions else action       
+            if action is not None:      
                 action_type_mask[:, action[:,0].long()] = True
             action_type_logits =  torch.where(action_type_mask, action_type_logits, torch.tensor(-1e+8).to(device))
             del action_type_mask
@@ -98,7 +92,8 @@ class ActionHead(nn.Module):
             move_direction_mask = available_move_direction.bool()
             transfer_direction_mask = available_transfer_direction.bool()
             transfer_amount_mask = available_transfer_amount.bool()
-            #move_direction_mask[:, 4] = ~action_move
+            # set default action True if the corresponding action is not to be taken
+            # move_direction_mask[:, 4] = ~action_move
             transfer_direction_mask[:, 4] = ~action_transfer
             transfer_amount_mask[:, 0] = ~action_transfer
             if action is not None:       
@@ -128,7 +123,7 @@ class ActionHead(nn.Module):
             transfer_direction = action[:,2]
             transfer_amount = action[:,3]
 
-        action_probs = action_type_probs.log_prob(action_type) + \
+        action_log_probs = action_type_probs.log_prob(action_type) + \
             move_direction_probs.log_prob(move_direction) + \
             transfer_direction_probs.log_prob(transfer_direction) + \
             transfer_amount_probs.log_prob(transfer_amount)
@@ -139,7 +134,7 @@ class ActionHead(nn.Module):
         del action_type_probs, move_direction_probs, transfer_direction_probs, transfer_amount_probs
         del action_type, move_direction, transfer_direction, transfer_amount
 
-        return action_probs, action_entropy, action
+        return action_log_probs, action_entropy, action
 
 def test(debug=False):
     batch_size = 2

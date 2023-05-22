@@ -22,20 +22,16 @@ class Baseline(nn.Module):
 
     def __init__(self, 
                  baseline_input=AHP.core_hidden_dim, 
-                 original_64=AHP.original_64,
-                 original_128=AHP.original_128,
+                 hidden_size=AHP.original_128,
                  use_popart=False,
-                 use_resblocks=False
                  ):
         super().__init__()
-    
-        self._use_resblocks = use_resblocks
         self._use_popart = use_popart
-        self.hidden_size = original_64
+        self.hidden_size = hidden_size
         
         #MLP
-        self.embed_fc = nn.Linear(baseline_input, original_128)
-        self.hidden_fc_1 = nn.Linear(original_128, original_64) 
+        self.embed_fc = nn.Linear(baseline_input, hidden_size)
+        self.hidden_fc = nn.Linear(hidden_size, hidden_size) 
         
         if self._use_popart:
             self.v_out = PopArt(self.hidden_size, 1)
@@ -44,21 +40,10 @@ class Baseline(nn.Module):
 
         
     def forward(self, core_output):
-        if self._use_resblocks:
-            # passed through a linear of size 64
-            x = self.embed_fc(core_output)
-            print("x.shape:", x.shape) if debug else None
-            # then passed through 16 ResBlocks with 64 hidden units
-            x = x.unsqueeze(-1)
-            for resblock in self.resblock_stack:
-                x = resblock(x)
-            x = x.squeeze(-1) 
-            # passed through a ReLU
-            x = F.relu(x)
-        else: # MLP
-            x = F.relu(self.embed_fc(core_output))
-            #x = F.relu(self.hidden_fc_1(x))
-            x = F.relu(self.hidden_fc_2(core_output))
+        # MLP
+        x = F.relu(self.embed_fc(core_output))
+        #x = F.relu(self.hidden_fc_1(x))
+        x = F.relu(self.hidden_fc(core_output))
 
         if self._use_popart:
             out = self.v_out(x)

@@ -292,7 +292,6 @@ class LuxAIRunner(Runner):
         self.buffer_opponent.ids += self.buffer_opponent.next_ids
         if self.use_lstm:
             self.buffer_opponent.update_lstm_states(hidden_states)
-        self.buffer_opponent.update_last_actions(actions_opponent)
         self.buffer_opponent.nextinsert(next_obs_scalar, next_obs_spatial, next_available_actions, self.next_ids_opponent)
 
     @torch.no_grad()

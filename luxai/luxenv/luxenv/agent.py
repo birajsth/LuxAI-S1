@@ -139,7 +139,6 @@ class AgentWithModel(Agent):
         self.model = model
         self.mode = mode
         self.hidden_states = defaultdict(lambda : None)
-        self.last_actions = defaultdict(lambda: np.array([13,13,13], dtype=np.float32))
         
     def get_agent_type(self):
         """
@@ -181,10 +180,8 @@ class AgentWithModel(Agent):
                 hidden_state = self.hidden_states[unit.id]
                 # IMPORTANT: You can change deterministic=True to disable randomness in model inference. Generally,
                 # I've found the agents get stuck sometimes if they are fully deterministic.
-                action_code, _states = self.model.predict(obs["scalar"], obs["spatial"], obs["available_actions"], self.last_actions[unit.id], hidden_state, deterministic=True)
+                action_code, _states = self.model.predict(obs["scalar"], obs["spatial"], obs["available_actions"], hidden_state, deterministic=True)
                 self.hidden_states[unit.id] = _states
-                self.last_actions[unit.id][:2] = self.last_actions[unit.id][1:]
-                self.last_actions[unit.id][2] = action_code[0].item()
                 action = self.action_code_to_action(action_code[0].detach().cpu().numpy(), game=game, unit=unit, city_tile=None, team=unit.team)
                 if action:
                     actions.append(action)
@@ -201,10 +198,8 @@ class AgentWithModel(Agent):
                         hidden_state = self.hidden_states[city_tile.id]
                         # IMPORTANT: You can change deterministic=True to disable randomness in model inference. Generally,
                         # I've found the agents get stuck sometimes if they are fully deterministic.
-                        action_code, _states = self.model.predict(obs["scalar"], obs["spatial"], obs["available_actions"], self.last_actions[city_tile.id], hidden_state, deterministic=True)
+                        action_code, _states = self.model.predict(obs["scalar"], obs["spatial"], obs["available_actions"], hidden_state, deterministic=True)
                         self.hidden_states[city_tile.id] = _states
-                        self.last_actions[city_tile.id][:2] = self.last_actions[city_tile.id][1:]
-                        self.last_actions[city_tile.id][2] = action_code[0].item()
                         action = self.action_code_to_action(action_code[0].detach().cpu().numpy(), game=game, unit=None, city_tile=city_tile,
                                                            team=city.team)
                         if action:

@@ -1,5 +1,4 @@
 import torch.nn as nn
-import torch
 
 from .libs.param_initalize import init_weights
 
@@ -8,7 +7,6 @@ from .spatial_encoder import SpatialEncoder
 from .core import Core
 from .action_head import ActionHead
 from .baseline import Baseline
-from .libs.hyper_parameters import Action_Size as AS
 
 class Actor(nn.Module):
     def __init__(self, use_lstm=True, use_squeeze_excitation=True):

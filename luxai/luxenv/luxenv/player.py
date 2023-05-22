@@ -8,8 +8,8 @@ from .agent import  AgentWithModel
 from ..game.actions import *
 
 
-from ....luxai.luxenv.luxenv.observation import Observation
-from ....luxai.luxenv.luxenv.reward import AgentReward, DenseReward
+from .observation import Observation
+from .reward import DenseReward
 from .action_spaces import action_code_to_action
 
 

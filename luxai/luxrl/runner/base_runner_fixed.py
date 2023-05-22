@@ -127,9 +127,8 @@ class Runner(object):
     def compute(self):
         """Calculate returns for the collected data."""
         self.trainer.prep_rollout()
-        
-        next_values = self.trainer.policy.get_value(self.buffer.next_obs_scalar, self.bufer.next_obs_spatial).flatten()
-        self.buffer.compute_returns(next_values, self.trainer.value_normalizer)
+        next_values = self.trainer.policy.get_value(self.buffer.next_obs_scalar, self.buffer.next_obs_spatial, self.buffer.next_available_actions).flatten()
+        self.buffer.compute_returns(next_values, self.next_ids, self.trainer.value_normalizer)
     
     def train(self):
         """Train policies with data in buffer. """
