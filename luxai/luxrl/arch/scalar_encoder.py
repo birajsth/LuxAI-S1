@@ -81,7 +81,7 @@ def test(debug=False):
     team = torch.randn(batch_size, SFS.num_team_features).to(device="cuda")
     game = torch.randn(batch_size, SFS.num_game_features).to(device="cuda")
 
-    available_actions = torch.randn(batch_size, SFS.num_available_actions).to(device="cuda")
+    available_actions = torch.randn(batch_size, AS.num_available_actions).to(device="cuda")
 
     scalar_list.append(agent)
     scalar_list.append(team)

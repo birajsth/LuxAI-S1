@@ -4,23 +4,21 @@ from collections import namedtuple
 
 
 # for the scalar feature
-ScalarFeatureSize = namedtuple('ScalarFeature',['num_agent_features', 'num_team_features', 'num_game_features', 'num_available_actions', 'num_last_actions_encoding', 'num_last_actions',
+ScalarFeatureSize = namedtuple('ScalarFeature',['num_agent_features', 'num_team_features', 'num_game_features', 'num_action_types',
                                                 'total'])
 
 Scalar_Feature_Size = ScalarFeatureSize(num_agent_features = 15,
                                         num_team_features = 10,
                                         num_game_features = 8,
-                                        num_available_actions = 22,
-                                        num_last_actions_encoding=14,
-                                        num_last_actions=3,
-                                        total = 42 
+                                        num_action_types = 7,
+                                        total = 40 
                                         )
 
 # for the spatial feature
 SpatialFeatureSize = namedtuple('SpatialFeature',['height', 'width', 'num_spatial_features'])
 
-Spatial_Feature_Size = SpatialFeatureSize(height = 11,
-                                          width = 11,
+Spatial_Feature_Size = SpatialFeatureSize(height = 12,
+                                          width = 12,
                                           num_spatial_features = 16,
                                           )
 
