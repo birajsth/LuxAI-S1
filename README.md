@@ -64,7 +64,8 @@ Action Spaces can be divided into two main categories:
 1.	Move Direction: North, West, East, South, Center
 2.	Transfer Direction: North, West, East, South, Center
 3.	Transfer Amount: 0, 20,40, 60, 80
-<br>Certain action was hand-scripted logic rather than the policy: the resources to be transferred. Resources are selected on the order of uranium, coal and wood if the target unit was Cart and whereas wood was prioritized first for Worker. While it is possible the agent could learn more complex policy if these actions were not scripted, it would add a lot of complexity and training time while having only relatively small boost in the game performance even if the agent were to learn optimal resource selection policy. Additionally, the agent was only allowed to take viable actions, with illegal actions masked by setting the logits to negative infinity.
+
+Certain action was hand-scripted logic rather than the policy: the resources to be transferred. Resources are selected on the order of uranium, coal and wood if the target unit was Cart and whereas wood was prioritized first for Worker. While it is possible the agent could learn more complex policy if these actions were not scripted, it would add a lot of complexity and training time while having only relatively small boost in the game performance even if the agent were to learn optimal resource selection policy. Additionally, the agent was only allowed to take viable actions, with illegal actions masked by setting the logits to negative infinity.
 
 ## Neural network architecture
 The model comprises two networks: the Actor Network (policy network) and the Critic Network (value network). The Actor Network has 2 encoder parts, 1 core part, and 4 action head parts. The Critic Network also has 2 encoder parts, 1 core part, but only 1 head part for value output.
@@ -93,8 +94,10 @@ The Critic Network includes a baseline head, which consists of linear layers wit
 ## Reinforcement Learning Algorithm
 The policy is trained using Proximal Policy Optimization (PPO) algorithm, a variant of advantage actor-critic policy gradient algorithm, with slight modifications to accommodate the multi-agent LuxAI environment. 
 Multi-agent proximal policy algorithm (MAPPO) trains two separate neural networks: an actor network, and a value function network (referred to as a critic).  Policy losses are computed by summing over the log probabilities of all the selected partial actions from 4 action heads, effectively computing the log of the joint probability of the whole action.
-The learning agent is first trained with heavily shaped individual rewards (without team objective) against fixed opponent which can sustain in the environment for number of turns by mining resources from adjacent tiles. This allows agent to learn fundamental behaviours such as navigating and gathering resources. The agent is then trained via self-play with reward that also include team objective, allowing agent to learn both cooperative and competitive behaviours. The agent's final reward r is computed as a combination of its individual reward a ,and the team reward T, weighted by a team spirit parameter (τ). <br>
-&emsp;&emsp;&emsp;&emsp;&emsp;                           r =(1- τ)xa + τxT
-<br>The implementation uses prioritized fictitious self-play method, with variance weighted probability distribution on win-rates, to select the opponent.
+The learning agent is first trained with heavily shaped individual rewards (without team objective) against fixed opponent which can sustain in the environment for number of turns by mining resources from adjacent tiles. This allows agent to learn fundamental behaviours such as navigating and gathering resources. The agent is then trained via self-play with reward that also include team objective, allowing agent to learn both cooperative and competitive behaviours. The agent's final reward r is computed as a combination of its individual reward a ,and the team reward T, weighted by a team spirit parameter (τ). 
+
+r =(1- τ)xa + τxT
+
+The implementation uses prioritized fictitious self-play method, with variance weighted probability distribution on win-rates, to select the opponent.
 
 
