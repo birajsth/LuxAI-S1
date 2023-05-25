@@ -52,6 +52,8 @@ def main(args):
     run = None
     if args.use_wandb:
         import wandb
+        if args.wandb_key:
+             wandb.login(key=args.wandb_key)
         run = wandb.init(
             project=args.wandb_project_name,
             entity=args.wandb_entity,
