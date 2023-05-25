@@ -59,11 +59,11 @@ Action space refers to the set of actions that an agent can take in the environm
 LuxAI includes both discrete action such as move action and continuous action: the amount of resource to transfer. For simplicity, all the action are mapped to be discrete action.
 
 Action Spaces can be divided into two main categories:
-1.	Main Actions: It includes 7 actions: Move, Transfer, Build Citytile, Spawn Worker, Spawn Cart, Pillage, None. 
+1.	Main Actions: It includes 7 main actions: Move, Transfer, Build Citytile, Spawn Worker, Spawn Cart, Pillage, None. 
 2.	Sub Actions: It includes 3 actions which further have its own sub actions:
-1.	Move Direction: North, West, East, South, Center
-2.	Transfer Direction: North, West, East, South, Center
-3.	Transfer Amount: 0, 20,40, 60, 80
+    1.	Move Direction: North, West, East, South, Center
+    2.	Transfer Direction: North, West, East, South, Center
+    3.	Transfer Amount: 0, 20,40, 60, 80
 
 Certain action was hand-scripted logic rather than the policy: the resources to be transferred. Resources are selected on the order of uranium, coal and wood if the target unit was Cart and whereas wood was prioritized first for Worker. While it is possible the agent could learn more complex policy if these actions were not scripted, it would add a lot of complexity and training time while having only relatively small boost in the game performance even if the agent were to learn optimal resource selection policy. Additionally, the agent was only allowed to take viable actions, with illegal actions masked by setting the logits to negative infinity.
 
