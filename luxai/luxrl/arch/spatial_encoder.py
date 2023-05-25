@@ -35,7 +35,7 @@ class SpatialEncoder(nn.Module):
             ResBlock(inplanes=original_32, planes=original_32, stride=1, squeeze_excitation=squeeze_excitation)
             for _ in range(n_resblocks)])
         
-        self.fc = nn.Linear(12 * 12 * original_32, original_64)
+        self.fc = nn.Linear(11 * 11 * original_32, original_64)
     
     
     

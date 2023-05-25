@@ -17,9 +17,9 @@ Scalar_Feature_Size = ScalarFeatureSize(num_agent_features = 15,
 # for the spatial feature
 SpatialFeatureSize = namedtuple('SpatialFeature',['height', 'width', 'num_spatial_features'])
 
-Spatial_Feature_Size = SpatialFeatureSize(height = 12,
-                                          width = 12,
-                                          num_spatial_features = 16,
+Spatial_Feature_Size = SpatialFeatureSize(height = 11,
+                                          width = 11,
+                                          num_spatial_features = 17,
                                           )
 
 ActionSize = namedtuple('ActionSize', ['num_unit_actions','num_citytile_actions','num_action_types', 'num_move_directions', 'num_transfer_directions', 'num_transfer_amounts', 'num_available_actions'])

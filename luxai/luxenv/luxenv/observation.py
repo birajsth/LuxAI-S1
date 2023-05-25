@@ -44,11 +44,11 @@ NUM_AGENT_FEATURES = 15
 NUM_TEAM_FEATURES = 10
 NUM_GAME_FEATURES = 8
 NUM_SCALAR_FEATURES = 15 + 10 + 8
-NUM_SPATIAL_FEATURES = 16
+NUM_SPATIAL_FEATURES = 17
 
-SPATIAL_WIDTH = 12
-SPATIAL_HEIGHT = 12
-AGENT_SPATIAL_SIZE = 12
+SPATIAL_WIDTH = 11
+SPATIAL_HEIGHT = 11
+AGENT_SPATIAL_SIZE = 11
 
 
 
@@ -119,37 +119,42 @@ class Observation:
     
     def get_spatial_obs(self) -> None:
         idx = {
+            # Whether tile
+            "tile":0,
             # Whether agent's present
-            "agent": 0,
+            "agent": 1,
             # Whether team's present
-            "team": 1,
+            "team": 2,
             # Whether opponent's present
-            "opponent": 2,
+            "opponent": 3,
             # has citytile/worker/cart
-            "citytile": 3,
-            "worker": 4,
-            "cart": 5,
+            "citytile": 4,
+            "worker": 5,
+            "cart": 6,
             # number of unit present, Normalized from 0-5
-            "num_units": 6,
+            "num_units": 7,
             # Normalized from 0-MAX_FUEL_CAPACITY(citytile)
-            "fuel": 7,
+            "fuel": 8,
             # Normalized from 0-MAX_CARGO_CAPACITY(worker/cart), averaged if multiple present
-            "cargo": 8,
+            "cargo": 9,
             # has team that needs resources(won't survive the night)
-            "need_resource": 8,
+            "need_resource": 10,
             # Normalized from 0-MAX_COOLDOWN(citytile/worker/cart)
-            "cooldown": 10,
+            "cooldown": 11,
             # has resource
-            "resource": 11,
+            "resource": 12,
             # Amount of wood in tile, Normalized from 0-MAX_WOOD
-            "wood": 12,
+            "wood": 13,
             # Amount of coal in tile, Normalized from 0-MAX_COAL
-            "coal": 13,
+            "coal": 14,
             # Amount of uranium in tile, Normalized from 0-MAX_URANIUM
-            "uranium": 14,
+            "uranium": 15,
             # Normalized from 0-MAX_ROAD_LEVEL
             "road_level": 15,
         }
+
+        # set 1 for tile 
+        self.spatial_obs[0,:,:] = 1
 
         # add resources and road_level to obs
         for cell_column in itertools.chain(self.game.map.map):
