@@ -76,10 +76,10 @@ class ActionHead(nn.Module):
         # convert action_type to one_hot_encoding
         action_type_one_hot = torch.zeros_like(available_action_type)
         action_type_one_hot.scatter_(1, action_type.unsqueeze(1).long(), 1)
-
+        
         # bool tensor for move and transfer
-        action_move = action_type_one_hot[:,0].bool()
-        action_transfer = action_type_one_hot[:,1].bool()
+        #action_move = action_type_one_hot[:,0].bool()
+        #action_transfer = action_type_one_hot[:,1].bool()
 
         # action_direction_head
         move_direction_logits = self.out_move_direction(x_move_direction)
@@ -94,8 +94,8 @@ class ActionHead(nn.Module):
             transfer_amount_mask = available_transfer_amount.bool()
             # set default action True if the corresponding action is not to be taken
             # move_direction_mask[:, 4] = ~action_move
-            transfer_direction_mask[:, 4] = ~action_transfer
-            transfer_amount_mask[:, 0] = ~action_transfer
+            #transfer_direction_mask[:, 4] = ~action_transfer
+            #transfer_amount_mask[:, 0] = ~action_transfer
             if action is not None:       
                 move_direction_mask[:, action[:,1].long()] = True
                 transfer_direction_mask[:, action[:,2].long()] = True
@@ -106,18 +106,16 @@ class ActionHead(nn.Module):
             transfer_amount_logits = torch.where(transfer_amount_mask, transfer_amount_logits, torch.tensor(-1e+8).to(device))
             del move_direction_mask, transfer_direction_mask, transfer_amount_mask
 
-        # `action_direction` is sampled from these logits using a multinomial with temperature 0.8. 
-        #action_direction_logits = action_direction_logits / self.temperature
         move_direction_probs = Categorical(logits=move_direction_logits)
         transfer_direction_probs = Categorical(logits=transfer_direction_logits)
         transfer_amount_probs = Categorical(logits=transfer_amount_logits)
         if action is None:
             move_direction = torch.argmax(move_direction_logits, dim=1) if deterministic else move_direction_probs.sample()
-            move_direction = torch.where(action_move, move_direction, torch.tensor(4).to(device))
+            #move_direction = torch.where(action_move, move_direction, torch.tensor(4).to(device))
             transfer_direction = torch.argmax(transfer_direction_logits, dim=1) if deterministic else transfer_direction_probs.sample()
-            transfer_direction = torch.where(action_transfer, transfer_direction, torch.tensor(4).to(device))
+            #transfer_direction = torch.where(action_transfer, transfer_direction, torch.tensor(4).to(device))
             transfer_amount = torch.argmax(transfer_amount_logits, dim=1) if deterministic else transfer_amount_probs.sample()
-            transfer_amount = torch.where(action_transfer, transfer_amount, torch.tensor(0).to(device))
+            #transfer_amount = torch.where(action_transfer, transfer_amount, torch.tensor(0).to(device))
         else: 
             move_direction = action[:,1]
             transfer_direction = action[:,2]
