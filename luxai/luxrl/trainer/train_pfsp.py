@@ -55,7 +55,7 @@ def main(args):
         run = wandb.init(
             project=args.wandb_project_name,
             entity=args.wandb_entity,
-            id=args.wandb_run_id,
+            id=args.id,
             resume="allow",
             sync_tensorboard=False,
             config=vars(args),

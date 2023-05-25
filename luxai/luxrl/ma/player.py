@@ -166,7 +166,7 @@ class MainPlayer(Player):
             if isinstance(player, Historical)
         ]
         win_rates = self._payoff[self, historical]
-        return win_rates.min() > 0.7 or steps_passed > 4e6
+        return win_rates.min() > 0.7 
 
     def checkpoint(self):
         self._checkpoint_step = self.agent.get_steps()

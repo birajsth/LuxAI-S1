@@ -1,7 +1,6 @@
 import time
 import torch
-import random
-from functools import reduce
+
 
 import gym
 from stable_baselines3.common.vec_env import SubprocVecEnv
@@ -148,7 +147,9 @@ class LuxAIRunner(Runner):
             self.buffer.reset()
             self.buffer_opponent.reset()
 
-            if self.update % 100 == 0:
+            self.num_wins = 0
+            self.total = 0
+            if self.update % 100 == 0 or self.playeragent.:
                 # checkpoint to update opponent agent
                 self.agent_checkpoint()
             
