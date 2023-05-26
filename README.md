@@ -50,13 +50,15 @@ For more configurations, check
 LuxAI is a game of complete information where both the competitors have the same game information. The game observation consists of information about general game states including phase i.e Night/Day, turn, information about the resources that are spread on the square grid, team information which includes the number of citytiles and units the corresponding team holds, research points, total fuel and each entities have their own individual information such as resource cargo, fuel, cooldown level etc. These shared observations are processed by the player to generate separate individual observation for each unit and citytile. 
 We structure the observation for the learning agent into two main components:
 1.	Scalar Features:
-Scalar features include information about the game state, team state and individual agent information which can be city tile or unit. Some additional information including available action that the agent is able to perform is also included in the scalar feature.
+Scalar features include information about the game state, team state and individual agent information which can be city tile or unit. Some additional information including available action that the agent is able to perform is also included in the scalar feature. We also include some derived feature which depend on the entity being controlled, for example the “distance and direction to center” feature of each entity in the game. This allows agent to get better understanding of its position in the variable sized map.
+
 2.	Spatial Features:
-Spatial feature is a matrix representing the game map which consist of information about the resources and game entities.  LuxAI map are of  variable size ranging from 12x12 to 32x32,  but the spatial range for the individual agent are cropped to be of 12x12 size. The individual agent make decision based on their local spatial information but does have knowledge about other game stages and team information.
-![](https://github.com/birajsth/LuxAI-S1/blob/main/src/spatial_range.jpg)
+Spatial feature is a matrix representing the game map which consist of information about the resources and game entities.  LuxAI map are of variable size ranging from 12x12 to 32x32. We structure each agent to have a partial view of the map with it at the center. The spatial range is set to be of size 11x11. In case where the spatial view gets out of bound from the global map, the tiles are padded with 0s. This enables each individual agent to make decision based on their local spatial information.
+![](https://github.com/birajsth/LuxAI-S1/blob/main/src/agent_view.jpg)
+Figure 1: The blue boundary indicates the 11x11 Spatial view for blue agent in a 24x24 map. The area out of bound from the map are padded with 0s.
 ### Action Spaces
 Action space refers to the set of actions that an agent can take in the environment.  At each turn, the game-playing agents are required to provide actions for the units and city tiles. In LuxAI, units and city tiles can perform actions each turn given certain conditions. In general, all actions are simultaneously applied and are validated against the state of the game at the start of a turn.  
-LuxAI includes both discrete action such as move action and continuous action: the amount of resource to transfer. For simplicity, all the action are mapped to be discrete action.
+LuxAI includes both discrete action such as move action and continuous action: the amount of resource to transfer. To reduce the complexity, all the action are mapped to be discrete action.
 
 Action Spaces can be divided into two main categories:
 1.	Main Actions: It includes 7 main actions: Move, Transfer, Build Citytile, Spawn Worker, Spawn Cart, Pillage, None. 
