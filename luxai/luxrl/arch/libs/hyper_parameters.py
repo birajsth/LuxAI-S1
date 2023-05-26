@@ -8,7 +8,7 @@ ScalarFeatureSize = namedtuple('ScalarFeature',['num_agent_features', 'num_team_
                                                 'total'])
 
 Scalar_Feature_Size = ScalarFeatureSize(num_agent_features = 15,
-                                        num_team_features = 10,
+                                        num_team_features = 12,
                                         num_game_features = 8,
                                         num_action_types = 7,
                                         total = 40 

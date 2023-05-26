@@ -14,7 +14,7 @@ from .action_spaces import action_code_to_action
 
 
 AVAILABLE_ACTIONS = 22
-NUM_SCALAR_FEATURES = 15 + 10 + 8
+NUM_SCALAR_FEATURES = 15 + 12 + 8
 NUM_SPATIAL_FEATURES = 17
 
 SPATIAL_WIDTH = 11
@@ -47,7 +47,7 @@ class LuxPlayer(AgentWithModel):
             "available_actions": MultiBinary(AVAILABLE_ACTIONS)
             })
         
-        self.reward_space = DenseReward(team_sprit=team_sprit)
+        self.reward_space = DenseReward(team_sprit=team_sprit, team=self.team)
        
         self.obs = None
 

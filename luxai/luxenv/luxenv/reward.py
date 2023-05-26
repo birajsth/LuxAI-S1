@@ -397,6 +397,7 @@ class DenseReward(BaseRewardSpace):
             positive_weight: float = 1.,
             negative_weight: float = 1.,
             team_sprit: float = .2,
+            team: int = 0,
             **kwargs
     ):
         assert positive_weight > 0.
@@ -411,20 +412,22 @@ class DenseReward(BaseRewardSpace):
 
             "mine":0.0125,
             "deposit":0.01,
-            "buildCityTile":2.0,
+            "buildCityTile":1.0,
             "transfer":0.0075,
             "pillage":.0,
             
             "night_on_city": 0.20,
             "survived_night_cycle": 2.0,
-            "survived_game": 6.0,
-            "dead": -2.0
+            "survived_game": 3.0,
+            "dead": -3.0,
+            "win":6,
         }
         self.weights.update({key: val for key, val in kwargs.items() if key in self.weights.keys()})
         for key in copy.copy(kwargs).keys():
             if key in self.weights.keys():
                 del kwargs[key]
         self.agent_states = defaultdict(lambda : 0.)
+        self.team = team
         super(DenseReward, self).__init__(**kwargs)
         self._reset()
 
@@ -466,7 +469,7 @@ class DenseReward(BaseRewardSpace):
                     
                     "night_on_city": 1. if check_night_on_city(game_state, unit) else 0.,
                     "survived_night_cycle": 1. if is_new_day_cycle(game_state) and not done else 0.,
-                    "survived_game": 1 if match_over else 0
+                    "survived_game": 1 if match_over else 0,
                 }
             else:
                 reward_items_dict = {
@@ -478,9 +481,11 @@ class DenseReward(BaseRewardSpace):
                     "survived_game": 1 if match_over else 0
                 }  
         if match_over:
+            reward_items_dict["win"] = 1 if game_state.get_winning_team()==self.team else 0.
+            # clear state
             self.agent_states[agent_id] = 0.
         agent_reward = sum([self.weight_rewards(self.weights[key] * r) for key, r in reward_items_dict.items()])
-        agent_reward = agent_reward /10./ max(self.positive_weight, self.negative_weight)
+        agent_reward = agent_reward /12./ max(self.positive_weight, self.negative_weight)
         return (1 - self.team_sprit) * agent_reward + self.team_sprit * team_reward
 
 

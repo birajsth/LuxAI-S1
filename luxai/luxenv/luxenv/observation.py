@@ -41,9 +41,9 @@ MAX_DISTANCE_CENTER = 16
 
 AVAILABLE_ACTIONS = 22
 NUM_AGENT_FEATURES = 15
-NUM_TEAM_FEATURES = 10
+NUM_TEAM_FEATURES = 12
 NUM_GAME_FEATURES = 8
-NUM_SCALAR_FEATURES = 15 + 10 + 8
+NUM_SCALAR_FEATURES = 15 + 12 + 8
 NUM_SPATIAL_FEATURES = 17
 
 SPATIAL_WIDTH = 11
@@ -65,7 +65,9 @@ class Observation:
         self.num_total_citytiles = 0
         self.num_total_units = 0
         self.num_team_citytiles = 0
+        self.num_opponent_citytiles = 0
         self.num_team_units = 0
+        self.num_opponent_units = 0
         self.num_team_workers = 0
         self.num_team_carts = 0
         
@@ -179,6 +181,7 @@ class Observation:
                     self.num_team_units += 1
                 else:
                     self.spatial_obs[idx["opponent"], y, x] = 1
+                    self.num_opponent_units += 1
 
                 cargo = u.cargo["wood"] + u.cargo["coal"] + u.cargo["uranium"]
                 if u.is_worker():
@@ -204,6 +207,7 @@ class Observation:
                     self.num_team_citytiles += 1
                     self.spatial_obs[idx["team"], y, x] = 1  
                 else:
+                    self.num_opponent_citytiles += 1
                     self.spatial_obs[idx["opponent"], y, x] = 1
                 self.spatial_obs[idx["citytile"], y, x] = 1
                 self.spatial_obs[idx["fuel"], y, x] = city.fuel / MAX_FUEL / len(city.city_cells)
@@ -213,10 +217,12 @@ class Observation:
     def get_team_features(self) -> dict:
         team_features = {
             # For Both Teams
-            # Normalized from 0-Total_citytiles
-            "team_citytiles": self.num_team_citytiles / max(self.num_total_citytiles, 1),
-            # Normalized form 0-Total_units
+            # Normalized 
+            "team_citytiles": self.num_team_citytiles / 100,
+            "opponent_citytiles": self.num_opponent_citytiles / 100,
+            # Normalized 
             "team_units": self.num_team_units / max(self.num_total_units, 1),
+            "opponent_units": self.num_opponent_units / 100,
             # Normalized from 0-Total_Team_units
             "team_workers": self.num_team_workers / max(self.num_team_units, 1),
             # Normalized from 0-Total_Team_units
