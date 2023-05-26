@@ -83,8 +83,8 @@ def get_config():
         help="the discount factor gamma")
     parser.add_argument("--gae-lambda", type=float, default=0.95,
         help="the lambda for the general advantage estimation")
-    parser.add_argument("--max-minibatch-size", type=int, default=512,
-        help="the max mini-batch size")
+    parser.add_argument("--num-minibatches", type=int, default=2,
+        help="the number mini-batches")
     parser.add_argument("--update-epochs", type=int, default=4,
         help="the K epochs to update the policy")
     parser.add_argument("--norm-adv", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,

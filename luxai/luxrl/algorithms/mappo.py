@@ -23,7 +23,7 @@ class MAPPO():
        
         self.ppo_epoch = args.update_epochs
         self.norm_adv = args.norm_adv
-        self.max_minibatch_size = args.max_minibatch_size
+        self.num_minibatches = args.num_minibatches
         
      
         self.max_grad_norm = args.max_grad_norm
@@ -143,7 +143,7 @@ class MAPPO():
         self.clipfracs = []
         for _ in range(self.ppo_epoch):
             
-            data_generator = buffer.feed_forward_generator(self.max_minibatch_size)
+            data_generator = buffer.feed_forward_generator(self.num_minibatches)
 
             for sample in data_generator:
 
@@ -164,7 +164,7 @@ class MAPPO():
                 if approx_kl > self.target_kl:
                     break
 
-        num_updates = self.ppo_epoch * buffer.num_mini_batch
+        num_updates = self.ppo_epoch * self.num_minibatches
     
         for k in train_info.keys():
             train_info[k] /= num_updates

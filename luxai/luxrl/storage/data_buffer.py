@@ -196,7 +196,7 @@ class DataBuffer(object):
                     self.returns[agent_indx[t]] = self.rewards[agent_indx[t]] + self.gamma * next_value 
             self.advantages = self.returns - values
 
-    def feed_forward_generator(self, minibatch_size):
+    def feed_forward_generator(self, num_minibatch):
         """
         Yield training data for MLP policies.
         :param advantages: (np.ndarray) advantage estimates.
@@ -204,16 +204,12 @@ class DataBuffer(object):
         :param mini_batch_size: (int) number of samples in each minibatch.
         """
         batch_size = len(self.ids)
-
+        minibatch_size = batch_size // num_minibatch
         b_inds = np.arange(batch_size)
         sampler = []
         for start in range(0, batch_size, minibatch_size):
             end = start + minibatch_size
-            if end<=batch_size:
-                sampler.append(b_inds[start:end])
-
-        self.num_mini_batch = len(sampler)
-
+            sampler.append(b_inds[start:end])
 
         b_obs_scalar = self.obs_scalar.reshape((-1,) + self.obs_shape["scalar"])
         b_obs_spatial = self.obs_spatial.reshape((-1,) + self.obs_shape["spatial"])
