@@ -55,6 +55,7 @@ Scalar features include information about the game state, team state and individ
 2.	Spatial Features:
 Spatial feature is a matrix representing the game map which consist of information about the resources and game entities.  LuxAI map are of variable size ranging from 12x12 to 32x32. We structure each agent to have a partial view of the map with it at the center. The spatial range is set to be of size 11x11. In case where the spatial view gets out of bound from the global map, the tiles are padded with 0s. This enables each individual agent to make decision based on their local spatial information.
 ![](https://github.com/birajsth/LuxAI-S1/blob/main/src/agent_view.jpg)
+
 Figure 1: The blue boundary indicates the 11x11 Spatial view for blue agent in a 24x24 map. The area out of bound from the map are padded with 0s.
 ### Action Spaces
 Action space refers to the set of actions that an agent can take in the environment.  At each turn, the game-playing agents are required to provide actions for the units and city tiles. In LuxAI, units and city tiles can perform actions each turn given certain conditions. In general, all actions are simultaneously applied and are validated against the state of the game at the start of a turn.  
@@ -76,7 +77,7 @@ The encoders in the model consist of a scalar encoder and a spatial encoder. The
 
 In the scalar encoder, the input is divided into separate elements representing game statistics, team statistics, and agent-specific information. Each element is embedded using a linear layer with ReLU activation, and the embedded outputs are appended into a scalar list. The elements in the list are concatenated and passed through another linear layer with ReLU activation, producing the encoder's output.
 
-In the spatial encoder, the input is projected using a 2D convolution layer and ReLU activation. It then passes through several Residual blocks with squeeze excitation layer. Squeeze excitation layer improves the representational power of a network by adaptively weighting each feature channels, learning to prioritize informative channels while suppressing less relevant ones. The output is then through a linear layer with ReLU activation, generating the embedded spatial representation.
+In the spatial encoder, the input is first projected using a 2D convolution layer and ReLU activation. It then passes through several fully convolutional Residual blocks with squeeze-excitation layers. The output from each convolutional layers is also masked to prevent information leaking from layer to layer along the manually padded edges. Squeeze excitation layer improves the representational power of a network by adaptively weighting each feature channels, learning to prioritize informative channels while suppressing less relevant ones. The output is then through a linear layer with ReLU activation, generating the embedded spatial representation.
 
 
 ### Core Structure
