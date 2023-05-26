@@ -149,7 +149,7 @@ class LuxAIRunner(Runner):
 
             self.num_wins = 0
             self.total = 0
-            if self.update % 100 == 0 or self.playeragent.:
+            if self.update % 100 == 0 or self.playeragent.ready_to_checkpoint():
                 # checkpoint to update opponent agent
                 self.agent_checkpoint()
             

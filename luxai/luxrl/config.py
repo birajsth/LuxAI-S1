@@ -14,7 +14,7 @@ def get_config():
         help="the id of the gym environment")
     parser.add_argument("--seed", type=int, default=1,
         help="seed of the experiment")
-    parser.add_argument("--total-timesteps", type=int, default=10000000,
+    parser.add_argument("--total-timesteps", type=int, default=100000000,
         help="total timesteps of the experiments")
     parser.add_argument("--torch-deterministic", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
         help="if toggled, `torch.backends.cudnn.deterministic=False`")
@@ -49,7 +49,7 @@ def get_config():
         help="eval frequency")
     
     # policy parameters
-    parser.add_argument("--use-lstm", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
+    parser.add_argument("--use-lstm", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
         help="Use Lstm in actor network")
     parser.add_argument("--use-squeeze-excitation", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
         help="Use Squeeze Excitation in ResNet")
@@ -73,8 +73,6 @@ def get_config():
         help="the name of the algorithm")
     parser.add_argument("--num-envs", type=int, default=2,
         help="the number of parallel game environments")
-    parser.add_argument("--use-centralized-V", type=bool, default=False,
-        help="whether to used centralized value function")
     parser.add_argument("--num-steps", type=int, default=360,
         help="the number of steps to run in each environment per policy rollout")
     parser.add_argument("--anneal-lr", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
@@ -85,7 +83,7 @@ def get_config():
         help="the discount factor gamma")
     parser.add_argument("--gae-lambda", type=float, default=0.95,
         help="the lambda for the general advantage estimation")
-    parser.add_argument("--max-minibatch-size", type=int, default=128,
+    parser.add_argument("--max-minibatch-size", type=int, default=512,
         help="the max mini-batch size")
     parser.add_argument("--update-epochs", type=int, default=4,
         help="the K epochs to update the policy")
@@ -97,7 +95,7 @@ def get_config():
         help="Toggles values normalization")
     parser.add_argument("--clip-coef", type=float, default=0.1,
         help="the surrogate clipping coefficient")
-    parser.add_argument("--clip-vloss", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
+    parser.add_argument("--clip-vloss", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
         help="Toggles whether or not to use a clipped loss for the value function, as per the paper.")
     parser.add_argument("--ent-coef", type=float, default=0.01,
         help="coefficient of the entropy")
