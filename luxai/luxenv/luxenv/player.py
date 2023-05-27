@@ -176,11 +176,11 @@ class LuxPlayer(AgentWithModel):
             return agent_id, self.get_observation(game, None, city_tile, city_tile.team, new_turn)
         
 
-    def get_reward_done(self, game, agent_id, action, team_reward):
+    def get_reward_done(self, game, agent_id, action, team_reward, match_over, game_won):
         '''
         Returns reward and done for agent.
         '''
-        return self.reward_space.compute_rewards_and_done(game, agent_id, action, team_reward)
+        return self.reward_space.compute_rewards_and_done(game, agent_id, action, team_reward, match_over, game_won)
 
     
 

@@ -233,10 +233,14 @@ class LuxAIRunner(Runner):
         for env_id, _, agent_id in self.next_ids:
             if player_dones[env_id]:
                 env_state = infos[env_id]["terminal_state"]   
+                game_won = env_state.get_winning_team() == self.players[env_id].team
+                match_over = True
                 done = True  
             else:
                 env_state = states[env_id]  
-            reward, done = self.players[env_id].get_reward_done(env_state, agent_id, int(actions[i][0]), player_rewards[env_id])
+                game_won = False
+                match_over = False
+            reward, done = self.players[env_id].get_reward_done(env_state, agent_id, int(actions[i][0]), player_rewards[env_id], match_over, game_won)
             rewards.append(reward)
 
             dones.append(done)

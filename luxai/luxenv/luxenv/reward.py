@@ -416,7 +416,7 @@ class DenseReward(BaseRewardSpace):
             "transfer":0.0075,
             "pillage":.0,
             
-            "night_on_city": 0.20,
+            "night_on_city": 0.10,
             "survived_night_cycle": 2.0,
             "survived_game": 3.0,
             "dead": -3.0,
@@ -431,19 +431,18 @@ class DenseReward(BaseRewardSpace):
         super(DenseReward, self).__init__(**kwargs)
         self._reset()
 
-    def compute_rewards_and_done(self, game_state: Game, agent_id: str, action:int, team_reward: float) -> Tuple[float, bool]:
+    def compute_rewards_and_done(self, game_state: Game, agent_id: str, action:int, team_reward: float, match_over:bool, game_won: bool) -> Tuple[float, bool]:
         # check if agent still exists
         if agent_id[0]=="c":
             city_tile = game_state.get_city_tile(agent_id)
             done = city_tile == None
-            return self.compute_reward(game_state, agent_id, None, city_tile, action, team_reward, done), done
+            return self.compute_reward(game_state, agent_id, None, city_tile, action, team_reward, match_over, game_won, done), done
         else:
             unit = game_state.get_unit(0, agent_id)
             done = unit == None
-            return self.compute_reward(game_state, agent_id, unit, None, action, team_reward, done), done
+            return self.compute_reward(game_state, agent_id, unit, None, action, team_reward, match_over, game_won, done), done
 
-    def compute_reward(self, game_state: Game, agent_id: str, unit: Unit, city_tile: CityTile, action: int, team_reward:float, done: bool) -> float:
-        match_over = game_state.match_over()
+    def compute_reward(self, game_state: Game, agent_id: str, unit: Unit, city_tile: CityTile, action: int, team_reward:float, match_over:bool, game_won:bool, done: bool) -> float:
         fuel_old = self.agent_states[agent_id]
         if done:
             reward_items_dict = {
@@ -481,7 +480,7 @@ class DenseReward(BaseRewardSpace):
                     "survived_game": 1 if match_over else 0
                 }  
         if match_over:
-            reward_items_dict["win"] = 1 if game_state.get_winning_team()==self.team else 0.
+            reward_items_dict["win"] = 1 if game_won else 0.
             # clear state
             self.agent_states[agent_id] = 0.
         agent_reward = sum([self.weight_rewards(self.weights[key] * r) for key, r in reward_items_dict.items()])
