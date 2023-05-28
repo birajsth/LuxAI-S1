@@ -132,8 +132,7 @@ class LuxEnvironment(gym.Env):
         # Decision for whole team
         # Get the next state
         self.learning_agent.take_actions(self.game, action_codes[0])
-        if len(action_codes[1]) > 0:
-            self.opponent_agent.take_actions(self.game, action_codes[1])
+        self.opponent_agent.take_actions(self.game, action_codes[1])
         try:
             #self.match_controller.take_actions(actions)
             self.done = self.match_controller.run_to_next_observation()

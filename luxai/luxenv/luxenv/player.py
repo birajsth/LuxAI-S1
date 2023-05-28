@@ -10,10 +10,10 @@ from ..game.actions import *
 
 from .observation import Observation
 from .reward import DenseReward
-from .action_spaces import action_code_to_action
+from .action_spaces import action_code_to_action, heuristic_actions
 
 
-AVAILABLE_ACTIONS = 22
+AVAILABLE_ACTIONS = 19
 NUM_SCALAR_FEATURES = 15 + 12 + 8
 NUM_SPATIAL_FEATURES = 17
 
@@ -101,21 +101,16 @@ class LuxPlayer(AgentWithModel):
             action = self.action_code_to_action(action_codes[i], game, unit, None, team)
             if action:
                 actions.append(action)
-            i += 1
-                
-        cities = game.cities.values()
-        for city in cities:
-            if city.team == self.team:
-                for cell in city.city_cells:
-                    city_tile = cell.city_tile
-                    action = self.action_code_to_action(action_codes[i], game, None, city_tile, team)
-                    if action:
-                        actions.append(action)
-                    i += 1
+            i += 1  
+        citytiles_action = self.heuristic_actions(game, team)
+        actions += citytiles_action
         self.match_controller.take_actions(actions)
 
     def action_code_to_action(self, action_code, game, unit=None, city_tile=None, team=None):
         return action_code_to_action(action_code, game, unit, city_tile, team)
+    
+    def heuristic_actions(self, game, team):
+        return heuristic_actions(game, team)
 
     def game_start(self, game):
         """
@@ -161,19 +156,9 @@ class LuxPlayer(AgentWithModel):
                 yield unit.id, self.get_observation(game, unit, None, unit.team, new_turn)
                 new_turn = False
                     
-
-            cities = game.cities.values()
-            for city in cities:
-                if city.team == self.team:
-                    for cell in city.city_cells:
-                        city_tile = cell.city_tile
-                        #if city_tile.can_act():
-                        yield city_tile.get_tile_id(), self.get_observation(game, None, city_tile, city_tile.team, new_turn)
-                        new_turn = False
         else:
             unit = game.get_unit(self.team, agent_id)
-            city_tile = game.get_citytile(agent_id)
-            return agent_id, self.get_observation(game, None, city_tile, city_tile.team, new_turn)
+            return agent_id, self.get_observation(game, unit, None, unit.team, new_turn)
         
 
     def get_reward_done(self, game, agent_id, action, team_reward, match_over, game_won):

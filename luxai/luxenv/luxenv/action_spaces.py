@@ -13,15 +13,11 @@ action_types = [
     MoveAction,
     TransferAction,
     SpawnCityAction,
-    SpawnWorkerAction,
-    SpawnCartAction,
-    ResearchAction,
     None,
 ]
 action_amounts = [0, .2, .4, .6, .8]
 
-ACTION_SPACE = MultiDiscrete([8, 5, 5])
-
+ACTION_SPACE = MultiDiscrete([4, 5, 5, 5])
 
 UNIT_TYPES = Constants.UNIT_TYPES
 DIRECTIONS = Constants.DIRECTIONS.astuple(include_center=True)
@@ -33,13 +29,11 @@ def action_code_to_action(action_code, game, unit=None, city_tile=None, team=Non
 
     x = None
     y = None
-    if city_tile is not None:
-        x = city_tile.pos.x
-        y = city_tile.pos.y
-    elif unit is not None:
+    if unit is not None:
         x = unit.pos.x
         y = unit.pos.y
-    
+    else: 
+        return None 
     action_type = action_types[action_code[0]]
     if action_type == MoveAction:
         return MoveAction(game=game,
@@ -76,16 +70,64 @@ def action_code_to_action(action_code, game, unit=None, city_tile=None, team=Non
         return None
     else:
         return action_type(game=game,
-                            unit_id=unit.id if unit else None,
+                            unit_id=unit.id ,
                             unit=unit,
-                            city_id=city_tile.city_id if city_tile else None,
-                            citytile=city_tile,
                             team=team,
                             x=x,
                             y=y)
    
 
+def heuristic_actions(game, team):
+    '''heuristic action for citytile'''
+    actions = []
+    cities = [city for city in game.cities.values() if city.team == team]
+    num_citytiles = sum([len(city.city_cells) for city in cities])
+    num_workers = 0
+    num_carts = 0
+    for unit in game.state["teamStates"][team]["units"].values():
+        if unit.is_worker():
+            num_workers += 1
+        else:
+            num_carts += 1
 
+    num_spawnable_units = max(num_citytiles - (num_workers+num_carts), 0)
+    for city in cities:
+        for cell in city.city_cells:
+            city_tile = cell.city_tile
+            if city_tile and city_tile.cooldown<1:
+                # SpwanUnitAction
+                if num_spawnable_units > 0:
+                    if num_workers - num_carts < 10:
+                        actions.append(SpawnWorkerAction(game=game,
+                                        city_id=city_tile.city_id,
+                                        citytile=city_tile,
+                                        unit_id=None,
+                                        unit=None,
+                                        team=team,
+                                        x=city_tile.pos.x,
+                                        y=city_tile.pos.y))
+                        num_workers += 1
+                    else:
+                        actions.append(SpawnCartAction(game=game,
+                                        city_id=city_tile.city_id,
+                                        citytile=city_tile,
+                                        unit_id=None,
+                                        unit=None,
+                                        team=team,
+                                        x=city_tile.pos.x,
+                                        y=city_tile.pos.y))
+                        num_carts += 1
+                    num_spawnable_units -= 1
+                else:
+                    actions.append(ResearchAction(game=game,
+                                        city_id=city_tile.city_id,
+                                        citytile=city_tile,
+                                        unit_id=None,
+                                        unit=None,
+                                        team=team,
+                                        x=city_tile.pos.x,
+                                        y=city_tile.pos.y))
+    return actions
     
     
 
@@ -93,8 +135,7 @@ def get_available_actions(game, unit=None, city_tile=None, num_team_city_tiles=0
     '''
     Returns: available actions
     '''
-
-    action_types = np.zeros((7,), dtype= np.int64)
+    action_types = np.zeros((4,), dtype= np.int64)
     move_directions = np.zeros((5,), dtype= np.int64)
     move_directions[4] = 1
     transfer_directions = np.zeros((5,), dtype= np.int64)
@@ -123,24 +164,9 @@ def get_available_actions(game, unit=None, city_tile=None, num_team_city_tiles=0
         # SpawnCityAction
         if unit.type == Constants.UNIT_TYPES.WORKER and unit.can_build(game.map):
             action_types[2] = 1 
-        
-        # PilageAction
-        # Not used for now
-        #if unit_cell.road > 0 and not unit_cell.city_tile:
-            #action_types[6] = 1
-        
-    # City Actions
-    elif city_tile is not None and city_tile.cooldown<1:
-        # ResearchAction
-        if game.state["teamStates"][city_tile.team]["researchPoints"] < MAX_RESEARCH:
-           action_types[5] = 1
-        # SpwanUnitAction
-        if len(game.state["teamStates"][city_tile.team]["units"]) < num_team_city_tiles:
-           action_types[3] = 1
-           action_types[4] = 1
 
     # None action is no action available
     if np.all(action_types==0):
-        action_types[6] = 1
+        action_types[3] = 1
 
     return np.concatenate([action_types, move_directions, transfer_directions, transfer_amounts],dtype=np.float32)

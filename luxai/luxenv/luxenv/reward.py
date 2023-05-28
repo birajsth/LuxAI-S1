@@ -406,13 +406,9 @@ class DenseReward(BaseRewardSpace):
         self.negative_weight = negative_weight
         self.team_sprit = team_sprit
         self.weights = {
-            "builtWorker": 1.0,
-            "builtCart": .90,
-            "research":.50,
-
             "mine":0.0125,
             "deposit":0.01,
-            "buildCityTile":3.0,
+            "buildCityTile":2.0,
             "transfer":0.0075,
             "pillage":.0,
             
@@ -433,22 +429,16 @@ class DenseReward(BaseRewardSpace):
 
     def compute_rewards_and_done(self, game_state: Game, agent_id: str, action:int, team_reward: float, match_over:bool, game_won: bool) -> Tuple[float, bool]:
         # check if agent still exists
-        if agent_id[0]=="c":
-            city_tile = game_state.get_city_tile(agent_id)
-            done = city_tile == None
-            return self.compute_reward(game_state, agent_id, None, city_tile, action, team_reward, match_over, game_won, done), done
-        else:
+        if agent_id[0]=="u":
             unit = game_state.get_unit(0, agent_id)
             done = unit == None
             return self.compute_reward(game_state, agent_id, unit, None, action, team_reward, match_over, game_won, done), done
-
+        return 0
+    
     def compute_reward(self, game_state: Game, agent_id: str, unit: Unit, city_tile: CityTile, action: int, team_reward:float, match_over:bool, game_won:bool, done: bool) -> float:
         fuel_old = self.agent_states[agent_id]
         if done:
             reward_items_dict = {
-                "builtWorker": 1.0 if action_types[action]==SpawnWorkerAction else 0.,
-                "builtCart": 1.0 if action_types[action]==SpawnCartAction else 0.,
-                "research": 1.0 if action_types[action]==ResearchAction else 0.,
                 "buildCityTile": 1.0 if action_types[action]==SpawnCityAction else 0.,
                 "transfer": fuel_old if action_types[action]==TransferAction else 0.,
                 "pillage": 1.0 if action_types[action]==PillageAction else 0.,
@@ -472,12 +462,6 @@ class DenseReward(BaseRewardSpace):
                 }
             else:
                 reward_items_dict = {
-                    "builtWorker": 1.0 if action_types[action]==SpawnWorkerAction else 0.,
-                    "builtCart": 1.0 if action_types[action]==SpawnCartAction else 0.,
-                    "research": 1.0 if action_types[action]==ResearchAction else 0.,
-                    
-                    "survived_night_cycle": 1. if is_new_day_cycle(game_state) and not done else 0.,
-                    "survived_game": 1 if match_over else 0
                 }  
         if match_over:
             reward_items_dict["win"] = 1 if game_won else 0.

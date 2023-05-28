@@ -10,7 +10,7 @@ ScalarFeatureSize = namedtuple('ScalarFeature',['num_agent_features', 'num_team_
 Scalar_Feature_Size = ScalarFeatureSize(num_agent_features = 15,
                                         num_team_features = 12,
                                         num_game_features = 8,
-                                        num_action_types = 7,
+                                        num_action_types = 4,
                                         total = 40 
                                         )
 
@@ -25,11 +25,11 @@ Spatial_Feature_Size = SpatialFeatureSize(height = 11,
 ActionSize = namedtuple('ActionSize', ['num_unit_actions','num_citytile_actions','num_action_types', 'num_move_directions', 'num_transfer_directions', 'num_transfer_amounts', 'num_available_actions'])
 Action_Size = ActionSize(num_unit_actions=10,
                          num_citytile_actions=4,
-                         num_action_types=7,
+                         num_action_types=4,
                          num_move_directions=5,
                          num_transfer_directions=5,
                          num_transfer_amounts=5,
-                         num_available_actions=22)
+                         num_available_actions=19)
 
 # for the arch model parameters
 ArchHyperParameters = namedtuple('ArchHyperParameters', ['batch_size',

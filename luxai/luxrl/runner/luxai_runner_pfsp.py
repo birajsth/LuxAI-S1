@@ -70,18 +70,22 @@ class LuxAIRunner(Runner):
                 actions_env = merge_actions(actions_env_player, actions_env_opponent)
                 
                 self.env_step += step
-                steps += actions.shape[0]
-                self.global_step += actions.shape[0]
+                steps += actions.shape[0] if actions!=None else 0
+                self.global_step += actions.shape[0] if actions!=None else 0
 
                 # record playeragent step
-                self.playeragent.agent.steps += actions.shape[0]
+                self.playeragent.agent.steps += actions.shape[0] if actions!=None else 0
 
                 # Player state, reward and done
                 states, player_rewards, player_dones, infos = self.envs.step(actions_env)
 
                 # Get agent reward, done from their respective player
-                rewards, dones = self.get_reward_done_from_player(states, actions, player_rewards, player_dones, infos)
-                
+                if actions != None:
+                    rewards, dones = self.get_reward_done_from_player(states, actions, player_rewards, player_dones, infos)
+                else:
+                    rewards = None
+                    dones = None
+
                 # Get next_agent_obs from their respective player
                 next_obs_scalar, next_obs_spatial, next_available_actions = self.get_obs_from_player(states)
 
@@ -264,38 +268,45 @@ class LuxAIRunner(Runner):
         hidden_state = None
         if self.use_lstm:
             hidden_state = (self.buffer.next_lstm_states_hidden, self.buffer.next_lstm_states_cell)
-        actions, action_log_probs, _, values, hidden_states = self.trainer.policy.get_action_and_value(self.buffer.next_obs_scalar, self.buffer.next_obs_spatial,\
+        if len(self.next_ids) > 0:
+            actions, action_log_probs, _, values, hidden_states = self.trainer.policy.get_action_and_value(self.buffer.next_obs_scalar, self.buffer.next_obs_spatial,\
                                                                                                    self.buffer.next_available_actions,  hidden_state)
-        # rearrange actions
-        # list consisting of agents actions for the env 
-        actions_env = slice_array(actions.detach().cpu().numpy(), self.num_agents)
-        values = values.flatten()
-        return values, actions, action_log_probs, hidden_states, actions_env
+            # rearrange actions
+            # list consisting of agents actions for the env 
+            actions_env = slice_array(actions.detach().cpu().numpy(), self.num_agents)
+            values = values.flatten()
+            return values, actions, action_log_probs, hidden_states, actions_env
+        else:
+            return None, None, None, None, [[] for _ in range(self.num_envs)]
     
     @torch.no_grad()
     def collect_opponent(self):
         hidden_state = None
         if self.use_lstm:
             hidden_state = (self.buffer_opponent.next_lstm_states_hidden, self.buffer_opponent.next_lstm_states_cell)
-        actions, action_log_probs, _, values, hidden_states = self.opponentagent.agent.policy.get_action_and_value(self.buffer_opponent.next_obs_scalar, self.buffer_opponent.next_obs_spatial,\
-                                                                                                   self.buffer_opponent.next_available_actions, hidden_state)
-        # rearrange actions
-        # list consisting of agents actions for the env 
-        actions_env = slice_array(actions.detach().cpu().numpy(), self.num_agents_opponent)
-        values = values.flatten()
-        return values, actions, action_log_probs, hidden_states, actions_env
+        if len(self.next_ids_opponent) > 0:
+            actions, action_log_probs, _, values, hidden_states = self.opponentagent.agent.policy.get_action_and_value(self.buffer_opponent.next_obs_scalar, self.buffer_opponent.next_obs_spatial,\
+                                                                                                    self.buffer_opponent.next_available_actions, hidden_state)
+            # rearrange actions
+            # list consisting of agents actions for the env 
+            actions_env = slice_array(actions.detach().cpu().numpy(), self.num_agents_opponent)
+            values = values.flatten()
+            return values, actions, action_log_probs, hidden_states, actions_env
+        else:
+            return None, None, None, None, [[] for _ in range(self.num_envs)]
     
     def insert(self, data):
         next_obs_scalar, next_obs_spatial, next_available_actions, \
             rewards, dones, values, actions, action_log_probs, hidden_states = data
-        self.buffer.insert(actions, action_log_probs, values, rewards, hidden_states, dones)
+        if rewards != None:
+            self.buffer.insert(actions, action_log_probs, values, rewards, hidden_states, dones)
         self.buffer.nextinsert(next_obs_scalar, next_obs_spatial, next_available_actions, self.next_ids)
         
     def insert_opponent(self, data):
         next_obs_scalar, next_obs_spatial, next_available_actions, \
             _, _, _, actions_opponent, _, hidden_states = data
         self.buffer_opponent.ids += self.buffer_opponent.next_ids
-        if self.use_lstm:
+        if hidden_states:
             self.buffer_opponent.update_lstm_states(hidden_states)
         self.buffer_opponent.nextinsert(next_obs_scalar, next_obs_spatial, next_available_actions, self.next_ids_opponent)
 

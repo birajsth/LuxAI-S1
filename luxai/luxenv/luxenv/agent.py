@@ -186,25 +186,10 @@ class AgentWithModel(Agent):
                 if action:
                     actions.append(action)
                 new_turn = False
-
-        # Inference the model per-city
-        cities = game.cities.values()
-        for city in cities:
-            if city.team == team:
-                for cell in city.city_cells:
-                    city_tile = cell.city_tile
-                    if city_tile.can_act():
-                        obs = self.get_observation(game, None, city_tile, city.team, new_turn)
-                        hidden_state = self.hidden_states[city_tile.id]
-                        # IMPORTANT: You can change deterministic=True to disable randomness in model inference. Generally,
-                        # I've found the agents get stuck sometimes if they are fully deterministic.
-                        action_code, _states = self.model.predict(obs["scalar"], obs["spatial"], obs["available_actions"], hidden_state, deterministic=True)
-                        self.hidden_states[city_tile.id] = _states
-                        action = self.action_code_to_action(action_code[0].detach().cpu().numpy(), game=game, unit=None, city_tile=city_tile,
-                                                           team=city.team)
-                        if action:
-                            actions.append(action)
-                        new_turn = False
+                
+        # heuristic city actions
+        citytiles_action = self.heuristic_actions(game, team)
+        actions += citytiles_action
 
         time_taken = time.time() - start_time
         if time_taken > 1. :  # Warn if larger than 0.5 seconds.
