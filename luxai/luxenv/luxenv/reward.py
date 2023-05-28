@@ -412,7 +412,7 @@ class DenseReward(BaseRewardSpace):
 
             "mine":0.0125,
             "deposit":0.01,
-            "buildCityTile":3.0,
+            "buildCityTile":2.0,
             "transfer":0.0075,
             "pillage":.0,
             
