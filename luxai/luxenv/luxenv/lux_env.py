@@ -104,7 +104,7 @@ class LuxEnvironment(gym.Env):
         if hasattr( learning_agent, 'observation_space' ):
             self.observation_space = learning_agent.observation_space
 
-        self.reward_space = RewardSpace()
+        self.reward_space = 0#RewardSpace()
 
         self.learning_agent = learning_agent
         self.opponent_agent = opponent_agent
@@ -132,7 +132,7 @@ class LuxEnvironment(gym.Env):
         # Decision for whole team
         # Get the next state
         self.learning_agent.take_actions(self.game, action_codes[0])
-        self.opponent_agent.take_actions(self.game, action_codes[1])
+        self.opponent_agent.take_actions(self.game, action_codes[1], ignore_cooldown=False)
         try:
             #self.match_controller.take_actions(actions)
             self.done = self.match_controller.run_to_next_observation()
@@ -144,7 +144,7 @@ class LuxEnvironment(gym.Env):
         return self.get_obs_reward_done_info()
     
     def get_obs_reward_done_info(self) -> Tuple[Game, Tuple[float, float], bool, Dict]:
-        reward = self.reward_space.compute_rewards(self.game, self.done)
+        reward = [0,0]#self.reward_space.compute_rewards(self.game, self.done)
         if self.done:
             self.info = {
                 "result": {
@@ -157,9 +157,13 @@ class LuxEnvironment(gym.Env):
             if winning_team == self.learning_agent.team:
                 self.info["result"]["learning_agent"] = "win"
                 self.info["result"]["opponent_agent"] = "lose"
+                reward[self.learning_agent.team] = 1
+                reward[self.opponent_agent.team] = -1
             elif winning_team == self.opponent_agent.team:
                 self.info["result"]["learning_agent"] = "lose"
                 self.info["result"]["opponent_agent"] = "win"
+                reward[self.learning_agent.team] = -1
+                reward[self.opponent_agent.team] = 1
         return self.game, reward[self.learning_agent.team], self.done, self.info
 
     def get_reward(self):

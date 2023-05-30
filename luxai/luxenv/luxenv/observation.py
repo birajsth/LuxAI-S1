@@ -32,6 +32,13 @@ CITY_COOLDOWN = GAME_CONSTANTS["PARAMETERS"]["CITY_ACTION_COOLDOWN"]
 MAX_ROAD = GAME_CONSTANTS["PARAMETERS"]["MAX_ROAD"]
 MAX_RESEARCH = max(GAME_CONSTANTS["PARAMETERS"]["RESEARCH_REQUIREMENTS"].values())
 
+WOOD_VALUE = GAME_CONSTANTS["PARAMETERS"]["RESOURCE_TO_FUEL_RATE"]["WOOD"]
+COAL_VALUE = GAME_CONSTANTS["PARAMETERS"]["RESOURCE_TO_FUEL_RATE"]["COAL"]
+URANIUM_VALUE = GAME_CONSTANTS["PARAMETERS"]["RESOURCE_TO_FUEL_RATE"]["URANIUM"]
+
+MAX_FUEL_CAPACITY_WORKER = WORKER_CAPACITY*URANIUM_VALUE
+MAX_FUEL_CAPACITY_CART = CART_CAPACITY*URANIUM_VALUE
+
 cargo_size = [WORKER_CAPACITY, CART_CAPACITY]
 unit_cooldown = [WORKER_COOLDOWN, CART_COOLDOWN]
 unit_light_upkeep = [WORKER_LIGHT_UPKEEP, CART_LIGHT_UPKEEP]
@@ -306,6 +313,7 @@ class Observation:
                 agent_features[idx["wood"]] = unit.cargo["wood"] / WORKER_CAPACITY
                 agent_features[idx["coal"]] = unit.cargo["coal"] / WORKER_CAPACITY
                 agent_features[idx["uranium"]] = unit.cargo["uranium"] / WORKER_CAPACITY
+                agent_features[idx["fuel"]] = (unit.cargo["wood"]*WOOD_VALUE + unit.cargo["coal"]*COAL_VALUE + unit.cargo["uranium"]*URANIUM_VALUE)/MAX_FUEL_CAPACITY_WORKER
                 agent_features[idx["cooldown"]] = unit.cooldown / WORKER_COOLDOWN
                 agent_features[idx["can_build_citytile"]] = 1 if cargo == WORKER_CAPACITY else 0
                 agent_features[idx["will_survive_night"]] = 1 if cargo >= WORKER_LIGHT_UPKEEP * self.rem_night_turns else 0
@@ -314,6 +322,7 @@ class Observation:
                 agent_features[idx["wood"]] = unit.cargo["wood"] / CART_CAPACITY
                 agent_features[idx["coal"]] = unit.cargo["coal"] / CART_CAPACITY
                 agent_features[idx["uranium"]] = unit.cargo["uranium"] / CART_CAPACITY
+                agent_features[idx["fuel"]] = (unit.cargo["wood"]*WOOD_VALUE + unit.cargo["coal"]*COAL_VALUE + unit.cargo["uranium"]*URANIUM_VALUE)/MAX_FUEL_CAPACITY_CART
                 agent_features[idx["cooldown"]] = unit.cooldown / CART_COOLDOWN
                 agent_features[idx["will_survive_night"]] = 1 if cargo >= CART_LIGHT_UPKEEP * self.rem_night_turns else 0
 

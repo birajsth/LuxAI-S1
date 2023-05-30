@@ -96,6 +96,7 @@ def heuristic_actions(game, team):
             city_tile = cell.city_tile
             if city_tile and city_tile.cooldown<1:
                 # SpwanUnitAction
+                # creat 1 cart after every 10 unit 
                 if num_spawnable_units > 0:
                     if num_workers - num_carts < 10:
                         actions.append(SpawnWorkerAction(game=game,

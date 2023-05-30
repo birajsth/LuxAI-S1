@@ -87,7 +87,7 @@ class LuxPlayer(AgentWithModel):
         if action:
             self.match_controller.take_action(action)
     
-    def take_actions(self, game, action_codes):
+    def take_actions(self, game, action_codes, ignore_cooldown=True):
         """
         Takes an action in the environment according to actionCode:
             actionCode: Index of action to take into the action array.
@@ -98,10 +98,17 @@ class LuxPlayer(AgentWithModel):
         units = game.state["teamStates"][self.team]["units"].values()
 
         for unit in units:
-            action = self.action_code_to_action(action_codes[i], game, unit, None, team)
-            if action:
-                actions.append(action)
-            i += 1  
+            if ignore_cooldown:
+                action = self.action_code_to_action(action_codes[i], game, unit, None, team)
+                if action:
+                    actions.append(action)
+                i += 1 
+            elif unit.can_act():
+                action = self.action_code_to_action(action_codes[i], game, unit, None, team)
+                if action:
+                    actions.append(action)
+                i += 1 
+             
         citytiles_action = self.heuristic_actions(game, team)
         actions += citytiles_action
         self.match_controller.take_actions(actions)
@@ -143,7 +150,7 @@ class LuxPlayer(AgentWithModel):
     
 
     
-    def get_agent_obs(self, game, agent_id=None, new_turn=False):
+    def get_agent_obs(self, game, agent_id=None, new_turn=False, ignore_cooldown=True):
         '''
         Returns agent's observation.
         If agent_id is not given, Iterates over all the team units and citytiles and returns their observation
@@ -152,8 +159,10 @@ class LuxPlayer(AgentWithModel):
             new_turn = True
             units = game.state["teamStates"][self.team]["units"].values()
             for unit in units:
-                #if unit.can_act():
-                yield unit.id, self.get_observation(game, unit, None, unit.team, new_turn)
+                if ignore_cooldown:
+                    yield unit.id, self.get_observation(game, unit, None, unit.team, new_turn)
+                elif unit.can_act():
+                    yield unit.id, self.get_observation(game, unit, None, unit.team, new_turn)
                 new_turn = False
                     
         else:

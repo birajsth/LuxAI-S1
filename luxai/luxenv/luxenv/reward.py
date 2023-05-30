@@ -408,15 +408,14 @@ class DenseReward(BaseRewardSpace):
         self.weights = {
             "mine":0.0125,
             "deposit":0.01,
-            "buildCityTile":2.0,
+            "buildCityTile":1.0,
             "transfer":0.0075,
             "pillage":.0,
             
             "night_on_city": 0.10,
-            "survived_night_cycle": 2.0,
             "survived_game": 3.0,
             "dead": -3.0,
-            "win":6,
+            "game_result":8,
         }
         self.weights.update({key: val for key, val in kwargs.items() if key in self.weights.keys()})
         for key in copy.copy(kwargs).keys():
@@ -457,14 +456,13 @@ class DenseReward(BaseRewardSpace):
                     "pillage": 1.0 if action_types[action]==PillageAction else 0.,
                     
                     "night_on_city": 1. if check_night_on_city(game_state, unit) else 0.,
-                    "survived_night_cycle": 1. if is_new_day_cycle(game_state) and not done else 0.,
                     "survived_game": 1 if match_over else 0,
                 }
             else:
                 reward_items_dict = {
                 }  
         if match_over:
-            reward_items_dict["win"] = 1 if game_won else 0.
+            reward_items_dict["game_result"] = 1 if game_won else -1
             # clear state
             self.agent_states[agent_id] = 0.
         agent_reward = sum([self.weight_rewards(self.weights[key] * r) for key, r in reward_items_dict.items()])
