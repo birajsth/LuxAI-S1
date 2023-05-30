@@ -42,9 +42,9 @@ class Baseline(nn.Module):
     def forward(self, core_output):
         # MLP
         x = F.relu(self.embed_fc(core_output))
-        #x = F.relu(self.hidden_fc_1(x))
         x = F.relu(self.hidden_fc(core_output))
-
+        del core_output
+        
         if self._use_popart:
             out = self.v_out(x)
         else:

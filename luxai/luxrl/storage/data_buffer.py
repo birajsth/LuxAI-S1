@@ -38,15 +38,12 @@ class DataBuffer(object):
         self.obs_scalar = torch.empty((0,) + self.obs_shape["scalar"], dtype=torch.float32).to(self.device)
         self.obs_spatial = torch.empty((0,) + self.obs_shape["spatial"], dtype=torch.float32).to(self.device)
         self.available_actions = torch.empty((0,) + self.available_actions_shape, dtype=torch.float32).to(self.device)
-        self.last_actions = torch.empty((0, ) + self.last_actions_shape, dtype=torch.float32).to(self.device)
 
         self.actions = torch.empty((0,) + self.act_shape, dtype=torch.float32).to(self.device)
         self.logprobs = torch.empty((0,), dtype=torch.float32).to(self.device)
         self.rewards = torch.empty((0,), dtype=torch.float32).to(self.device)
         self.dones = torch.empty((0,), dtype=torch.float32).to(self.device)
         self.values = torch.empty((0,), dtype=torch.float32).to(self.device)
-
-        self.last_actions_dict = defaultdict(lambda: torch.tensor([13,13,13], dtype=torch.float32))
 
         if self.use_lstm:
             self.lstm_states_hidden= torch.empty((0,) + self.lstm_states_shape, dtype=torch.float32).to(self.device)
@@ -114,10 +111,7 @@ class DataBuffer(object):
         self.next_obs_scalar = next_obs_scalar
         self.next_obs_spatial = next_obs_spatial
         self.next_available_actions = next_available_actions
-        self.next_last_actions = torch.zeros((len(next_ids), 3), dtype=torch.int16).to(self.device)
         self.next_ids = next_ids
-        for i, id in enumerate(next_ids):
-            self.next_last_actions[i] = self.last_actions_dict[id]
 
         if self.use_lstm: 
             self.next_lstm_states_hidden = torch.zeros((len(next_ids),) + self.lstm_states_shape, dtype=torch.float32).to(self.device)
@@ -132,6 +126,7 @@ class DataBuffer(object):
         """
         clears buffer data
         """
+        del self.obs_scalar, self.obs_spatial, self.available_actions, self.actions, self.logprobs, self.rewards, self.dones, self.values
         self.obs_scalar = torch.empty((0,) + self.obs_shape["scalar"], dtype=torch.float32).to(self.device)
         self.obs_spatial = torch.empty((0,) + self.obs_shape["spatial"], dtype=torch.float32).to(self.device)
         self.available_actions = torch.empty((0,) + self.available_actions_shape, dtype=torch.float32).to(self.device)
@@ -142,10 +137,10 @@ class DataBuffer(object):
         self.dones = torch.empty((0,), dtype=torch.float32).to(self.device)
         self.values = torch.empty((0,), dtype=torch.float32).to(self.device)
         if self.use_lstm:
+            del self.lstm_states_hidden, self.lstm_states_cell, self.lstm_states_dict
             self.lstm_states_hidden= torch.empty((0,) + self.lstm_states_shape, dtype=torch.float32).to(self.device)
             self.lstm_states_cell = torch.empty((0,) + self.lstm_states_shape, dtype=torch.float32).to(self.device)
             self.lstm_states_dict = defaultdict(lambda: None)
-
         self.ids = []
 
     @torch.no_grad()

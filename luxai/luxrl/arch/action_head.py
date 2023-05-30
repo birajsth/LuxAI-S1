@@ -48,8 +48,9 @@ class ActionHead(nn.Module):
         available_move_direction = available_actions[:, AS.num_action_types:AS.num_action_types + AS.num_move_directions]
         available_transfer_direction = available_actions[:, AS.num_action_types + AS.num_move_directions: AS.num_action_types + AS.num_move_directions + AS.num_transfer_directions]
         available_transfer_amount = available_actions[:, AS.num_action_types + AS.num_move_directions + AS.num_transfer_directions:]
-        
+        del available_actions
         x = F.relu(self.embed_fc(core_output))
+        del core_output
 
         x_action_type = F.relu(self.hidden_fc_1(x))
         x_move_direction = F.relu(self.hidden_fc_2(x))
