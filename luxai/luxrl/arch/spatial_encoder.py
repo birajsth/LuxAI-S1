@@ -80,7 +80,3 @@ def test(debug=False):
     print('embedded_spatial:', embedded_spatial) if debug else None
     print('embedded_spatial.shape:', embedded_spatial.shape) if debug else None
 
-
-if __name__ == '__main__':
-    test(True)
-

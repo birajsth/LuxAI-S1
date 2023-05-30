@@ -53,5 +53,6 @@ class PolicyN(nn.Module):
             x_spatial = torch.from_numpy(x_spatial).unsqueeze(0).to(device)
             x_available_actions = torch.from_numpy(x_available_actions).unsqueeze(0).to(device)
         action, _, _, hidden_state = self.actor(x_scalar, x_spatial, x_available_actions, hidden_state, deterministic=deterministic)
+        del x_scalar, x_available_actions, x_spatial
         return action, hidden_state
     
