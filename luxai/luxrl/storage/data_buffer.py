@@ -127,6 +127,8 @@ class DataBuffer(object):
         clears buffer data
         """
         del self.obs_scalar, self.obs_spatial, self.available_actions, self.actions, self.logprobs, self.rewards, self.dones, self.values
+        if self.device=="cuda":
+            torch.cuda.empty_cache()
         self.obs_scalar = torch.empty((0,) + self.obs_shape["scalar"], dtype=torch.float32).to(self.device)
         self.obs_spatial = torch.empty((0,) + self.obs_shape["spatial"], dtype=torch.float32).to(self.device)
         self.available_actions = torch.empty((0,) + self.available_actions_shape, dtype=torch.float32).to(self.device)
