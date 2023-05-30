@@ -212,7 +212,7 @@ class LuxAIRunner(Runner):
         next_obs_spatial = torch.empty((0,) + self.buffer.obs_shape["spatial"], dtype=torch.float32).to(self.device)
         next_available_actions = torch.empty((0,) + self.buffer.available_actions_shape, dtype=torch.float32).to(self.device)
         for i in range(self.num_envs):
-            agents = self.opponents[i].get_agent_obs(states[i])
+            agents = self.opponents[i].get_agent_obs(states[i], ignore_cooldown=False)
             while True:
                 try:
                     (agent_id, agent_obs) = next(agents)
