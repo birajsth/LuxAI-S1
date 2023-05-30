@@ -70,6 +70,7 @@ class MAPPO():
                                             mb_hidden_state, mb_actions )
         logratio = newlogprob - mb_logprobs
         ratio = logratio.exp()
+        del mb_obs_scalar, mb_obs_spatial, mb_available_actions, mb_hidden_state, mb_actions, mb_logprobs
 
         with torch.no_grad():
             # calculate approx_kl http://joschu.net/blog/kl-approx.html
@@ -85,6 +86,8 @@ class MAPPO():
         pg_loss1 = -mb_advantages * ratio
         pg_loss2 = -mb_advantages * torch.clamp(ratio, 1 - self.clip_coef, 1 + self.clip_coef)
         pg_loss = torch.max(pg_loss1, pg_loss2).mean()
+        
+        del mb_advantages
 
         # Value loss
         newvalue = newvalue.view(-1)
@@ -104,6 +107,8 @@ class MAPPO():
             v_loss = 0.5 * v_loss_max.mean()
         else:
             v_loss = 0.5 * ((newvalue - mb_returns) ** 2).mean()
+
+        del mb_values, mb_returns
 
         entropy_loss = entropy.mean()
          

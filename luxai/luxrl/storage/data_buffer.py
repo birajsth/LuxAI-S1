@@ -205,37 +205,23 @@ class DataBuffer(object):
         for start in range(0, batch_size, minibatch_size):
             end = start + minibatch_size
             sampler.append(b_inds[start:end])
-
-        b_obs_scalar = self.obs_scalar.reshape((-1,) + self.obs_shape["scalar"])
-        b_obs_spatial = self.obs_spatial.reshape((-1,) + self.obs_shape["spatial"])
-        b_available_actions = self.available_actions.reshape((-1,) + self.available_actions_shape) 
-
-        if self.use_lstm:
-            b_lstm_states_hidden = self.lstm_states_hidden
-            b_lstm_states_cell = self.lstm_states_cell
-        
-        b_actions = self.actions.reshape((-1,) + self.act_shape)
-        b_logprobs = self.logprobs.reshape(-1)
-        b_values = self.values.reshape(-1)  
-        b_returns = self.returns.reshape(-1)
-        b_advantages = self.advantages.reshape(-1)
         
         for indices in sampler:
-            mb_obs_scalar = b_obs_scalar[indices]
-            mb_obs_spatial = b_obs_spatial[indices] 
-            mb_available_actions = b_available_actions[indices]
+            mb_obs_scalar = self.obs_scalar[indices]
+            mb_obs_spatial = self.obs_spatial[indices] 
+            mb_available_actions = self.available_actions[indices]
 
             mb_hidden_state = None
             if self.use_lstm:
-                mb_hidden_state = (b_lstm_states_hidden[indices], b_lstm_states_cell[indices])
+                mb_hidden_state = (self.lstm_states_hidden[indices], self.lstm_states_cell[indices])
         
-            mb_actions = b_actions[indices]  
-            mb_logprobs = b_logprobs[indices]
-            mb_values = b_values[indices]
-            mb_returns = b_returns[indices]
-            mb_advantages = b_advantages[indices]
+            mb_actions = self.actions[indices]  
+            mb_logprobs = self.logprobs[indices]
+            mb_values = self.values[indices]
+            mb_returns = self.returns[indices]
+            mb_advantages = self.advantages[indices]
 
             yield mb_obs_scalar, mb_obs_spatial, mb_available_actions, mb_hidden_state, \
                 mb_actions, mb_logprobs, mb_values, mb_returns, mb_advantages
-
+        
     
