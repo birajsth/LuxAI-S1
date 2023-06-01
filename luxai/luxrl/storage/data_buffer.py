@@ -192,6 +192,7 @@ class DataBuffer(object):
                             next_value = values[agent_indx[t+1]]
                     self.returns[agent_indx[t]] = self.rewards[agent_indx[t]] + self.gamma * next_value 
             self.advantages = self.returns - values
+        del next_value_dict
 
     def feed_forward_generator(self, num_minibatch):
         """

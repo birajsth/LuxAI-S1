@@ -65,8 +65,6 @@ class ActionHead(nn.Module):
         # inspired by the DI-star project, in action_type_head
         if self._use_action_mask:
             action_type_mask = available_action_type.bool()
-            if action is not None:      
-                action_type_mask[:, action[:,0].long()] = True
             action_type_logits =  torch.where(action_type_mask, action_type_logits, torch.tensor(-1e+8).to(device))
             del action_type_mask
 
@@ -78,13 +76,10 @@ class ActionHead(nn.Module):
             action_type = action[:,0]
 
         # convert action_type to one_hot_encoding
-        action_type_one_hot = torch.zeros_like(available_action_type)
-        action_type_one_hot.scatter_(1, action_type.unsqueeze(1).long(), 1)
+        #action_type_one_hot = torch.nn.functional.one_hot(action_type.long(), AS.num_action_types)
         
         # bool tensor for move and transfer
-        action_move = action_type_one_hot[:,0].bool()
-        action_transfer = action_type_one_hot[:,1].bool()
-        del action_type_one_hot
+        #del action_type_one_hot
 
         # action_direction_head
         move_direction_logits = self.out_move_direction(x_move_direction)
@@ -101,11 +96,6 @@ class ActionHead(nn.Module):
             # move_direction_mask[:, 4] = ~action_move
             #transfer_direction_mask[:, 4] = ~action_transfer
             #transfer_amount_mask[:, 0] = ~action_transfer
-            if action is not None:       
-                move_direction_mask[:, action[:,1].long()] = True
-                transfer_direction_mask[:, action[:,2].long()] = True
-                transfer_amount_mask[:, action[:,3].long()] = True
-                
             move_direction_logits = torch.where(move_direction_mask, move_direction_logits, torch.tensor(-1e+8).to(device))
             transfer_direction_logits = torch.where(transfer_direction_mask, transfer_direction_logits, torch.tensor(-1e+8).to(device))
             transfer_amount_logits = torch.where(transfer_amount_mask, transfer_amount_logits, torch.tensor(-1e+8).to(device))
@@ -116,24 +106,24 @@ class ActionHead(nn.Module):
         transfer_amount_probs = Categorical(logits=transfer_amount_logits)
         if action is None:
             move_direction = torch.argmax(move_direction_logits, dim=1) if deterministic else move_direction_probs.sample()
-            move_direction = torch.where(action_move, move_direction, torch.tensor(4).to(device))
+            move_direction = torch.where(action_type==0, move_direction, torch.tensor(4).to(device))
             transfer_direction = torch.argmax(transfer_direction_logits, dim=1) if deterministic else transfer_direction_probs.sample()
-            transfer_direction = torch.where(action_transfer, transfer_direction, torch.tensor(4).to(device))
+            transfer_direction = torch.where(action_type==1, transfer_direction, torch.tensor(4).to(device))
             transfer_amount = torch.argmax(transfer_amount_logits, dim=1) if deterministic else transfer_amount_probs.sample()
-            transfer_amount = torch.where(action_transfer, transfer_amount, torch.tensor(0).to(device))
+            transfer_amount = torch.where(action_type==1, transfer_amount, torch.tensor(0).to(device))
         else: 
             move_direction = action[:,1]
             transfer_direction = action[:,2]
             transfer_amount = action[:,3]
-        del action_move, action_transfer
+        #del action_move, action_transfer
 
         action_log_probs = action_type_probs.log_prob(action_type) + \
             move_direction_probs.log_prob(move_direction) + \
             transfer_direction_probs.log_prob(transfer_direction) + \
             transfer_amount_probs.log_prob(transfer_amount)
         action_entropy = action_type_probs.entropy() + move_direction_probs.entropy() + transfer_direction_probs.entropy() + transfer_amount_probs.entropy()
-
         action = torch.cat((action_type.unsqueeze(-1), move_direction.unsqueeze(-1), transfer_direction.unsqueeze(-1), transfer_amount.unsqueeze(-1)), dim=1)
+
         del action_type_logits, move_direction_logits, transfer_direction_logits, transfer_amount_logits
         del action_type_probs, move_direction_probs, transfer_direction_probs, transfer_amount_probs
         del action_type, move_direction, transfer_direction, transfer_amount
@@ -144,14 +134,16 @@ def test(debug=False):
     batch_size = 2
     core_output = torch.randn(batch_size, AHP.core_hidden_dim)
 
-    available_actions = torch.randn(batch_size, AS.num_available_actions)
- 
+    available_actions = torch.zeros(batch_size, AS.num_available_actions)
+    available_actions[:,[0,3]] = 1
+    action = torch.zeros(batch_size, 4)
+    action[:,0] = 1
     action_type_head = ActionHead()
 
     print("core_output:", core_output) if debug else None
     print("core_output.shape:", core_output.shape) if debug else None
     
-    action_logprob, _, action_type = action_type_head.forward(core_output, available_actions, deterministic=True)
+    action_logprob, _, action_type = action_type_head.forward(core_output, available_actions, action, deterministic=True)
 
     print("action_logprobs:", action_logprob) if debug else None
     print("action_logprobs.shape:", action_logprob.shape) if debug else None
@@ -159,3 +151,6 @@ def test(debug=False):
     print("action.shape:", action_type.shape) if debug else None
     
     print("This is a test!") if debug else None
+
+if __name__=="__main__":
+    test(True)

@@ -96,7 +96,7 @@ def heuristic_actions(game, team):
             city_tile = cell.city_tile
             if city_tile and city_tile.cooldown<1:
                 # SpwanUnitAction
-                # creat 1 cart after every 10 unit 
+                # create 1 cart after every 10 unit 
                 if num_spawnable_units > 0:
                     if num_workers - num_carts < 10:
                         actions.append(SpawnWorkerAction(game=game,
@@ -145,6 +145,8 @@ def get_available_actions(game, unit=None, city_tile=None, num_team_city_tiles=0
     
     if unit is not None and unit.cooldown<1:
         # Move Actions
+        # Move Center
+        action_types[0] = move_directions[4] = 1
         for i, direction in enumerate(DIRECTIONS[:4]):
             new_cell = game.map.get_cell_by_pos(
                 unit.pos.translate(direction, 1)
