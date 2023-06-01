@@ -109,7 +109,7 @@ def heuristic_actions(game, team):
             city_tile = cell.city_tile
             if city_tile and city_tile.cooldown<1:
                 # prioritize research to spawning units at night
-                if is_night and research_points<MAX_RESEARCH:
+                if is_night and num_workers>20 and research_points<MAX_RESEARCH:
                     actions.append(ResearchAction(game=game,
                                         city_id=city_tile.city_id,
                                         citytile=city_tile,
@@ -122,17 +122,7 @@ def heuristic_actions(game, team):
                 # SpwanUnitAction
                 # create 1 cart for every 5 units if workers >20
                 elif num_spawnable_units > 0:
-                    if num_workers>20 and  num_workers / max(num_workers+num_carts, 1) < .8:
-                        actions.append(SpawnWorkerAction(game=game,
-                                        city_id=city_tile.city_id,
-                                        citytile=city_tile,
-                                        unit_id=None,
-                                        unit=None,
-                                        team=team,
-                                        x=city_tile.pos.x,
-                                        y=city_tile.pos.y))
-                        num_workers += 1
-                    else:
+                    if num_workers>20 and  num_workers / max(num_workers+num_carts, 1) > .8:
                         actions.append(SpawnCartAction(game=game,
                                         city_id=city_tile.city_id,
                                         citytile=city_tile,
@@ -142,6 +132,16 @@ def heuristic_actions(game, team):
                                         x=city_tile.pos.x,
                                         y=city_tile.pos.y))
                         num_carts += 1
+                    else:
+                        actions.append(SpawnWorkerAction(game=game,
+                                        city_id=city_tile.city_id,
+                                        citytile=city_tile,
+                                        unit_id=None,
+                                        unit=None,
+                                        team=team,
+                                        x=city_tile.pos.x,
+                                        y=city_tile.pos.y))
+                        num_workers += 1
                     num_spawnable_units -= 1
 
     return actions

@@ -15,6 +15,10 @@ from ..game.actions import *
 from .action_spaces import action_types
 
 
+from ..game.game_constants import GAME_CONSTANTS
+
+WORKER_LIGHT_UPKEEP = GAME_CONSTANTS["PARAMETERS"]["LIGHT_UPKEEP"]["WORKER"]
+CART_LIGHT_UPKEEP = GAME_CONSTANTS["PARAMETERS"]["LIGHT_UPKEEP"]["CART"]
 # weights
 resources = {
     "wood": 0.01,
@@ -283,7 +287,9 @@ class AgentReward(BaseRewardSpace):
         self.negative_weight = negative_weight
         self.team_sprit = team_sprit
         self.weights = {
-            "mine":0.0125,
+            "fuel_increase":0.01,
+            "deposit": 0.01,
+            "transfer": 0.01,
             "survived_game": 3.0,
             "dead": -3.0,
         }
@@ -312,7 +318,9 @@ class AgentReward(BaseRewardSpace):
         else:
             fuel_new = calculate_fuel(game_state, unit, None)
             self.agent_states[agent_id] = fuel_new
-            reward_items_dict["mine"]: fuel_new -fuel_old
+            reward_items_dict["fuel_increase"]: fuel_new -fuel_old
+            reward_items_dict["deposit"]: min(fuel_old-fuel_new, 0) if game_state.map.get_cell_by_pos(unit.pos).is_city_tile() else 0.
+            reward_items_dict["transfer"]: min(fuel_old-fuel_new, 0) if not game_state.is_night() else 0.
         if match_over:
             reward_items_dict["survived_game"] = 1
             # clear state
