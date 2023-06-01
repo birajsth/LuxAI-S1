@@ -23,7 +23,7 @@ class ActionHead(nn.Module):
     '''
 
     def __init__(self, core_dim=AHP.core_hidden_dim,
-                 hidden_size=AHP.original_128,  
+                 hidden_size=128,  
                  use_action_mask=AHP.use_action_type_mask):
         super().__init__()
 
@@ -33,12 +33,10 @@ class ActionHead(nn.Module):
         self.hidden_fc_1 = nn.Linear(hidden_size, hidden_size)
         self.hidden_fc_2 = nn.Linear(hidden_size, hidden_size)
         self.hidden_fc_3 = nn.Linear(hidden_size, hidden_size)
-        self.hidden_fc_4 = nn.Linear(hidden_size, hidden_size)
 
         self.out_action_type = nn.Linear(hidden_size, AS.num_action_types)
         self.out_move_direction = nn.Linear(hidden_size, AS.num_move_directions)
         self.out_transfer_direction = nn.Linear(hidden_size, AS.num_transfer_directions)
-        self.out_transfer_amount = nn.Linear(hidden_size, AS.num_transfer_amounts)
 
     
 
@@ -47,7 +45,6 @@ class ActionHead(nn.Module):
         available_action_type = available_actions[:, :AS.num_action_types]
         available_move_direction = available_actions[:, AS.num_action_types:AS.num_action_types + AS.num_move_directions]
         available_transfer_direction = available_actions[:, AS.num_action_types + AS.num_move_directions: AS.num_action_types + AS.num_move_directions + AS.num_transfer_directions]
-        available_transfer_amount = available_actions[:, AS.num_action_types + AS.num_move_directions + AS.num_transfer_directions:]
         del available_actions
         x = F.relu(self.embed_fc(core_output))
         del core_output
@@ -55,7 +52,6 @@ class ActionHead(nn.Module):
         x_action_type = F.relu(self.hidden_fc_1(x))
         x_move_direction = F.relu(self.hidden_fc_2(x))
         x_transfer_direction = F.relu(self.hidden_fc_3(x))
-        x_transfer_amount = F.relu(self.hidden_fc_4(x))
 
         del x
 
@@ -75,58 +71,44 @@ class ActionHead(nn.Module):
         else: 
             action_type = action[:,0]
 
-        # convert action_type to one_hot_encoding
-        #action_type_one_hot = torch.nn.functional.one_hot(action_type.long(), AS.num_action_types)
-        
-        # bool tensor for move and transfer
-        #del action_type_one_hot
-
         # action_direction_head
         move_direction_logits = self.out_move_direction(x_move_direction)
         transfer_direction_logits = self.out_transfer_direction(x_transfer_direction)
-        transfer_amount_logits = self.out_transfer_amount(x_transfer_amount)
-        del x_move_direction, x_transfer_direction, x_transfer_amount
+        del x_move_direction, x_transfer_direction
 
         # inspired by the DI-star project, in action_type_head
         if self._use_action_mask:
             move_direction_mask = available_move_direction.bool()
             transfer_direction_mask = available_transfer_direction.bool()
-            transfer_amount_mask = available_transfer_amount.bool()
             # set default action True if the corresponding action is not to be taken
-            # move_direction_mask[:, 4] = ~action_move
-            #transfer_direction_mask[:, 4] = ~action_transfer
-            #transfer_amount_mask[:, 0] = ~action_transfer
+            #move_direction_mask[:, 4] = ~(action_type==0)
+            #transfer_direction_mask[:, 4] = ~(action_type==1)
             move_direction_logits = torch.where(move_direction_mask, move_direction_logits, torch.tensor(-1e+8).to(device))
             transfer_direction_logits = torch.where(transfer_direction_mask, transfer_direction_logits, torch.tensor(-1e+8).to(device))
-            transfer_amount_logits = torch.where(transfer_amount_mask, transfer_amount_logits, torch.tensor(-1e+8).to(device))
-            del move_direction_mask, transfer_direction_mask, transfer_amount_mask
+            del move_direction_mask, transfer_direction_mask
 
         move_direction_probs = Categorical(logits=move_direction_logits)
         transfer_direction_probs = Categorical(logits=transfer_direction_logits)
-        transfer_amount_probs = Categorical(logits=transfer_amount_logits)
         if action is None:
             move_direction = torch.argmax(move_direction_logits, dim=1) if deterministic else move_direction_probs.sample()
-            move_direction = torch.where(action_type==0, move_direction, torch.tensor(4).to(device))
+            #move_direction = torch.where(action_type==0, move_direction, torch.tensor(4).to(device))
             transfer_direction = torch.argmax(transfer_direction_logits, dim=1) if deterministic else transfer_direction_probs.sample()
-            transfer_direction = torch.where(action_type==1, transfer_direction, torch.tensor(4).to(device))
-            transfer_amount = torch.argmax(transfer_amount_logits, dim=1) if deterministic else transfer_amount_probs.sample()
-            transfer_amount = torch.where(action_type==1, transfer_amount, torch.tensor(0).to(device))
+            #transfer_direction = torch.where(action_type==1, transfer_direction, torch.tensor(4).to(device))
         else: 
             move_direction = action[:,1]
             transfer_direction = action[:,2]
-            transfer_amount = action[:,3]
-        #del action_move, action_transfer
 
-        action_log_probs = action_type_probs.log_prob(action_type) + \
-            move_direction_probs.log_prob(move_direction) + \
-            transfer_direction_probs.log_prob(transfer_direction) + \
-            transfer_amount_probs.log_prob(transfer_amount)
-        action_entropy = action_type_probs.entropy() + move_direction_probs.entropy() + transfer_direction_probs.entropy() + transfer_amount_probs.entropy()
-        action = torch.cat((action_type.unsqueeze(-1), move_direction.unsqueeze(-1), transfer_direction.unsqueeze(-1), transfer_amount.unsqueeze(-1)), dim=1)
+        move_direction_logprobs = torch.where(action_type==0, move_direction_probs.log_prob(move_direction), torch.tensor(0).to(device))
+        transfer_direction_logprobs = torch.where(action_type==1, transfer_direction_probs.log_prob(transfer_direction), torch.tensor(0).to(device))
 
-        del action_type_logits, move_direction_logits, transfer_direction_logits, transfer_amount_logits
-        del action_type_probs, move_direction_probs, transfer_direction_probs, transfer_amount_probs
-        del action_type, move_direction, transfer_direction, transfer_amount
+        action_log_probs = action_type_probs.log_prob(action_type) + move_direction_logprobs + transfer_direction_logprobs
+        action_entropy = action_type_probs.entropy() + move_direction_probs.entropy() + transfer_direction_probs.entropy() 
+        action = torch.cat((action_type.unsqueeze(-1), move_direction.unsqueeze(-1), transfer_direction.unsqueeze(-1)),dim=1)
+
+        del action_type_logits, move_direction_logits, transfer_direction_logits
+        del action_type_probs, move_direction_probs, transfer_direction_probs
+        del move_direction_logprobs, transfer_direction_logprobs
+        del action_type, move_direction, transfer_direction
 
         return action_log_probs, action_entropy, action
 

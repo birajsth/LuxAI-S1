@@ -17,10 +17,9 @@ class Core(nn.Module):
     Outputs:
     
     '''
-    def __init__(self, embedding_dim=AHP.original_128, hidden_dim=AHP.core_hidden_dim, 
+    def __init__(self, embedding_dim=128, hidden_dim=AHP.core_hidden_dim, 
                  n_layers=AHP.lstm_layers, use_lstm=True, drop_prob=0.0) -> None:
         super(Core, self).__init__()
-
         self.n_layers = n_layers
         self.hidden_dim = hidden_dim
         self._use_lstm=use_lstm
@@ -29,7 +28,7 @@ class Core(nn.Module):
             self.lstm = nn.LSTM(input_size=embedding_dim, hidden_size=hidden_dim, num_layers=n_layers, 
                             dropout=drop_prob, batch_first=True)
         else: # MLP
-            self.fc = nn.Linear(AHP.original_128, AHP.original_128)
+            self.fc = nn.Linear(hidden_dim, hidden_dim)
         
         
 

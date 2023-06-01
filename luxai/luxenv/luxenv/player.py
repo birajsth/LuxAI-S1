@@ -9,11 +9,11 @@ from ..game.actions import *
 
 
 from .observation import Observation
-from .reward import DenseReward
+from .reward import AgentReward
 from .action_spaces import action_code_to_action, heuristic_actions
 
 
-AVAILABLE_ACTIONS = 19
+AVAILABLE_ACTIONS = 12
 NUM_SCALAR_FEATURES = 15 + 12 + 8
 NUM_SPATIAL_FEATURES = 17
 
@@ -38,7 +38,7 @@ class LuxPlayer(AgentWithModel):
 
         # Define action and observation space
         # They must be gym.spaces objects      
-        self.agent_action_space = spaces.MultiDiscrete([7, 5, 5, 5])
+        self.agent_action_space = spaces.MultiDiscrete([7, 5, 5])
 
         # Observation space: 
         self.agent_observation_space = Dict({
@@ -47,7 +47,7 @@ class LuxPlayer(AgentWithModel):
             "available_actions": MultiBinary(AVAILABLE_ACTIONS)
             })
         
-        self.reward_space = DenseReward(team_sprit=team_sprit, team=self.team)
+        self.reward_space = AgentReward(team_sprit=team_sprit)
        
         self.obs = None
 
@@ -170,11 +170,11 @@ class LuxPlayer(AgentWithModel):
             return agent_id, self.get_observation(game, unit, None, unit.team, new_turn)
         
 
-    def get_reward_done(self, game, agent_id, action, team_reward, match_over, game_won):
+    def get_reward_done(self, game, agent_id, team_reward, match_over, ):
         '''
         Returns reward and done for agent.
         '''
-        return self.reward_space.compute_rewards_and_done(game, agent_id, action, team_reward, match_over, game_won)
+        return self.reward_space.compute_rewards_and_done(game, agent_id,team_reward, match_over)
 
     
 

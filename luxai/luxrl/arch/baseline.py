@@ -22,21 +22,20 @@ class Baseline(nn.Module):
 
     def __init__(self, 
                  baseline_input=AHP.core_hidden_dim, 
-                 hidden_size=AHP.original_128,
+                 hidden_size=128,
                  use_popart=False,
                  ):
         super().__init__()
         self._use_popart = use_popart
-        self.hidden_size = hidden_size
         
         #MLP
         self.embed_fc = nn.Linear(baseline_input, hidden_size)
         self.hidden_fc = nn.Linear(hidden_size, hidden_size) 
         
         if self._use_popart:
-            self.v_out = PopArt(self.hidden_size, 1)
+            self.v_out = PopArt(hidden_size, 1)
         else:
-            self.v_out = nn.Linear(self.hidden_size, 1)
+            self.v_out = nn.Linear(hidden_size, 1)
 
         
     def forward(self, core_output):

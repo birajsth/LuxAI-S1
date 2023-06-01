@@ -20,22 +20,21 @@ class SpatialEncoder(nn.Module):
     '''
     
     def __init__(self, n_resblocks=AHP.n_resblocks, 
-                 original_32=AHP.original_32,
-                 original_64=AHP.original_64,
+                 hidden_size=32, output_size=64,
                  squeeze_excitation=True
                  ) -> None:
         super().__init__()
         self.use_improved_one = True
 
         self.project_inplanes = SPFS.num_spatial_features
-        self.project = nn.Conv2d(self.project_inplanes, original_32, kernel_size=3, stride=1,
+        self.project = nn.Conv2d(self.project_inplanes, hidden_size, kernel_size=3, stride=1,
                                 padding=1, bias=True)
         
         self.resblock_stack = nn.ModuleList([
-            ResBlock(inplanes=original_32, planes=original_32, stride=1, squeeze_excitation=squeeze_excitation)
+            ResBlock(inplanes=hidden_size, planes=hidden_size, stride=1, squeeze_excitation=squeeze_excitation)
             for _ in range(n_resblocks)])
         
-        self.fc = nn.Linear(11 * 11 * original_32, original_64)
+        self.fc = nn.Linear(11 * 11 * hidden_size, output_size)
     
     
     

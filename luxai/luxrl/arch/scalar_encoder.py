@@ -17,16 +17,16 @@ class ScalarEncoder(nn.Module):
         embedded_scalar - A 1D tensor of embedded scalar features
     '''
 
-    def __init__(self):
+    def __init__(self, hidden_size=64):
         super().__init__()
-        self.agent_fc = nn.Linear(SFS.num_agent_features, AHP.original_32) # with relu
-        self.game_fc = nn.Linear(SFS.num_game_features, AHP.original_8) # with relu
-        self.team_fc = nn.Linear(SFS.num_team_features, AHP.original_16) # with relu
+        self.agent_fc = nn.Linear(SFS.num_agent_features, 32) # with relu
+        self.game_fc = nn.Linear(SFS.num_game_features, 8) # with relu
+        self.team_fc = nn.Linear(SFS.num_team_features, 16) # with relu
         # additional features
-        self.available_actions_fc = nn.Linear(AS.num_action_types, AHP.original_8) 
+        self.available_actions_fc = nn.Linear(AS.num_action_types, 8) 
         
-        self.fc_1 = nn.Linear(AHP.scalar_encoder_fc1_input, AHP.original_64) 
-        
+        self.fc_1 = nn.Linear(AHP.scalar_encoder_fc1_input, hidden_size) 
+        self.fc_2 = nn.Linear(hidden_size, hidden_size)
     
     def forward(self, scalar_tensor, available_actions):
         agent_statistics = scalar_tensor[:, :SFS.num_agent_features]
@@ -63,7 +63,8 @@ class ScalarEncoder(nn.Module):
         embedded_scalar_list.append(x)
         
         embedded_scalar = torch.cat(embedded_scalar_list, dim=1)
-        embedded_scalar_out = F.relu(self.fc_1(embedded_scalar))
+        embedded_scalar= F.relu(self.fc_1(embedded_scalar))
+        embedded_scalar_out = F.relu(self.fc_2(embedded_scalar))
         del x, embedded_scalar_list, embedded_scalar
 
         return embedded_scalar_out

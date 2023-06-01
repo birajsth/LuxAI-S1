@@ -81,7 +81,7 @@ class LuxAIRunner(Runner):
 
                 # Get agent reward, done from their respective player
                 if actions != None:
-                    rewards, dones = self.get_reward_done_from_player(states, actions, player_rewards, player_dones, infos)
+                    rewards, dones = self.get_reward_done_from_player(states, player_rewards, player_dones, infos)
                 else:
                     rewards = None
                     dones = None
@@ -229,7 +229,7 @@ class LuxAIRunner(Runner):
         return next_obs_scalar, next_obs_spatial, next_available_actions
     
 
-    def get_reward_done_from_player(self, states, actions, player_rewards, player_dones, infos):
+    def get_reward_done_from_player(self, states, player_rewards, player_dones, infos):
          # Get agent reward, done from their respective player
         rewards = []
         dones = []
@@ -237,14 +237,12 @@ class LuxAIRunner(Runner):
         for env_id, _, agent_id in self.next_ids:
             if player_dones[env_id]:
                 env_state = infos[env_id]["terminal_state"]   
-                game_won = env_state.get_winning_team() == self.players[env_id].team
                 match_over = True
                 done = True  
             else:
                 env_state = states[env_id]  
-                game_won = False
                 match_over = False
-            reward, done = self.players[env_id].get_reward_done(env_state, agent_id, int(actions[i][0]), player_rewards[env_id], match_over, game_won)
+            reward, done = self.players[env_id].get_reward_done(env_state, agent_id, player_rewards[env_id], match_over)
             rewards.append(reward)
 
             dones.append(done)
@@ -304,7 +302,7 @@ class LuxAIRunner(Runner):
         
     def insert_opponent(self, data):
         next_obs_scalar, next_obs_spatial, next_available_actions, \
-            _, _, _, actions_opponent, _, hidden_states = data
+            _, _, _, _, _, hidden_states = data
         self.buffer_opponent.ids += self.buffer_opponent.next_ids
         if hidden_states:
             self.buffer_opponent.update_lstm_states(hidden_states)

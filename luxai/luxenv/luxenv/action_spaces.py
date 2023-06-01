@@ -1,6 +1,5 @@
 
 import numpy as np
-from functools import partial
 
 from gym.spaces import MultiDiscrete
 
@@ -15,10 +14,11 @@ action_types = [
     SpawnCityAction,
     None,
 ]
-action_amounts = [0, .2, .4, .6, .8]
+ACTION_SPACE = MultiDiscrete([4, 4, 4])
 
-ACTION_SPACE = MultiDiscrete([4, 5, 5, 5])
 
+WORKER_CAPACITY = GAME_CONSTANTS["PARAMETERS"]["RESOURCE_CAPACITY"]["WORKER"]
+CART_CAPACITY = GAME_CONSTANTS["PARAMETERS"]["RESOURCE_CAPACITY"]["CART"]
 UNIT_TYPES = Constants.UNIT_TYPES
 DIRECTIONS = Constants.DIRECTIONS.astuple(include_center=True)
 RESOURCES = Constants.RESOURCE_TYPES
@@ -48,18 +48,27 @@ def action_code_to_action(action_code, game, unit=None, city_tile=None, team=Non
         except:
             return None
 
-        # Prioritize transfering urainum than coal than wood
-        if unit.cargo["uranium"] > 0:
-            resource_type = "uranium"
-                    
-        elif unit.cargo["coal"] > 0:
-            resource_type = "coal"
-            amount = unit.cargo["coal"]*action_code[3]
+        # Prioritize transfering urainum than coal than wood if worker(transfering to cart)
+        if unit.is_worker():
+            if unit.cargo["uranium"] > 0:
+                resource_type = "uranium"       
+            elif unit.cargo["coal"] > 0:
+                resource_type = "coal"
+            else:
+                resource_type = "wood"
+            # transfer all 
+            amount = unit.cargo[resource_type]
+        # Prioritize transfering wood first if cart(transfering to worker)
         else:
-            resource_type = "wood"
-            amount = unit.cargo["wood"]*action_code[3]
-
-        amount = unit.cargo[resource_type]*action_code[3]
+            if unit.cargo["wood"] > 0:
+                resource_type = "wood"
+            elif unit.cargo["coad"] > 0:
+                resource_type= "coal"
+            else:
+                resource_type="uranium"
+            # transfer amount that fit in worker 
+            dest_unit_cargo_rem = dest_unit.cargo["wood"] + dest_unit.cargo["coal"] + dest_unit.cargo["uranium"] - WORKER_CAPACITY
+            amount = min(dest_unit_cargo_rem - WORKER_CAPACITY, unit.cargo[resource_type])
         return TransferAction(game=game,
                             team=team,
                             source_id=unit.id,
@@ -80,6 +89,10 @@ def action_code_to_action(action_code, game, unit=None, city_tile=None, team=Non
 def heuristic_actions(game, team):
     '''heuristic action for citytile'''
     actions = []
+
+    is_night = game.is_night()
+    research_points = game.state["teamStates"][team]["researchPoints"]
+    
     cities = [city for city in game.cities.values() if city.team == team]
     num_citytiles = sum([len(city.city_cells) for city in cities])
     num_workers = 0
@@ -95,10 +108,21 @@ def heuristic_actions(game, team):
         for cell in city.city_cells:
             city_tile = cell.city_tile
             if city_tile and city_tile.cooldown<1:
+                # prioritize research to spawning units at night
+                if is_night and research_points<MAX_RESEARCH:
+                    actions.append(ResearchAction(game=game,
+                                        city_id=city_tile.city_id,
+                                        citytile=city_tile,
+                                        unit_id=None,
+                                        unit=None,
+                                        team=team,
+                                        x=city_tile.pos.x,
+                                        y=city_tile.pos.y))
+                    research_points += 1
                 # SpwanUnitAction
-                # create 1 cart after every 10 unit 
-                if num_spawnable_units > 0:
-                    if num_workers - num_carts < 10:
+                # create 1 cart for every 5 units
+                elif num_spawnable_units > 0:
+                    if num_workers / max(num_workers+num_carts, 1) < .8:
                         actions.append(SpawnWorkerAction(game=game,
                                         city_id=city_tile.city_id,
                                         citytile=city_tile,
@@ -119,34 +143,23 @@ def heuristic_actions(game, team):
                                         y=city_tile.pos.y))
                         num_carts += 1
                     num_spawnable_units -= 1
-                else:
-                    actions.append(ResearchAction(game=game,
-                                        city_id=city_tile.city_id,
-                                        citytile=city_tile,
-                                        unit_id=None,
-                                        unit=None,
-                                        team=team,
-                                        x=city_tile.pos.x,
-                                        y=city_tile.pos.y))
+
     return actions
     
     
 
-def get_available_actions(game, unit=None, city_tile=None, num_team_city_tiles=0):
+def get_available_actions(game, unit=None):
     '''
     Returns: available actions
     '''
     action_types = np.zeros((4,), dtype= np.int64)
-    move_directions = np.zeros((5,), dtype= np.int64)
-    move_directions[4] = 1
-    transfer_directions = np.zeros((5,), dtype= np.int64)
-    transfer_directions[4] = 1
-    transfer_amounts = np.ones((5,), dtype= np.int64)
+    action_types[3] = 1
+    move_directions = np.zeros((4,), dtype= np.int64)
+    transfer_directions = np.zeros((4,), dtype= np.int64)
     
     if unit is not None and unit.cooldown<1:
         # Move Actions
         # Move Center
-        action_types[0] = move_directions[4] = 1
         for i, direction in enumerate(DIRECTIONS[:4]):
             new_cell = game.map.get_cell_by_pos(
                 unit.pos.translate(direction, 1)
@@ -160,7 +173,8 @@ def get_available_actions(game, unit=None, city_tile=None, num_team_city_tiles=0
                 else:
                     #Transfer Actions
                     target_unit = list(new_cell.units.values())[0]
-                    if target_unit.team == unit.team:
+                    # Workers can only transfer to Cart and viceversa
+                    if target_unit.team == unit.team and target_unit.type != unit.type:
                         if unit.cargo["wood"]>0 or unit.cargo["coal"]>0 or unit.cargo["uranium"]>0:
                             action_types[1] = transfer_directions[i] = 1
 
@@ -168,8 +182,4 @@ def get_available_actions(game, unit=None, city_tile=None, num_team_city_tiles=0
         if unit.type == Constants.UNIT_TYPES.WORKER and unit.can_build(game.map):
             action_types[2] = 1 
 
-    # None action is no action available
-    if np.all(action_types==0):
-        action_types[3] = 1
-
-    return np.concatenate([action_types, move_directions, transfer_directions, transfer_amounts],dtype=np.float32)
+    return np.concatenate([action_types, move_directions, transfer_directions],dtype=np.float32)

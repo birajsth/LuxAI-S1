@@ -175,7 +175,7 @@ class GameResultReward(FullGameRewardSpace):
         return ct_count * 10000 +  unit_count
     
 
-class StatefulMultiReward(FullGameRewardSpace):
+class TeamReward(FullGameRewardSpace):
     @staticmethod
     def get_reward_spec() -> RewardSpec:
         return RewardSpec(
@@ -200,26 +200,16 @@ class StatefulMultiReward(FullGameRewardSpace):
 
         self.city_count = np.empty((2,), dtype=float)
         self.unit_count = np.empty_like(self.city_count)
-        self.research_points = np.empty_like(self.city_count)
-        self.total_fuel = np.empty_like(self.city_count)
 
         self.weights = {
-            "game_result": 10.,
+            "game_result": 3.,
             "city": 1.,
-            "unit": 0.5,
-            "research": 0.1,
-            "fuel": 0.005,
-            # Penalize workers each step that their cargo remains full
-            # "full_workers": -0.01,
-            "full_workers": 0.,
-            # A reward given each step
-            "step": 0.,
         }
         self.weights.update({key: val for key, val in kwargs.items() if key in self.weights.keys()})
         for key in copy.copy(kwargs).keys():
             if key in self.weights.keys():
                 del kwargs[key]
-        super(StatefulMultiReward, self).__init__(**kwargs)
+        super(TeamReward, self).__init__(**kwargs)
         self._reset()
 
     def compute_rewards_and_done(self, game_state: Game, done: bool) -> Tuple[Tuple[float, float], bool]:
@@ -230,20 +220,9 @@ class StatefulMultiReward(FullGameRewardSpace):
     def compute_rewards(self, game_state: Game, done: bool) -> Tuple[float, float]:
         new_city_count = count_city_tiles(game_state)
         new_unit_count = count_units(game_state)
-        new_research_points = count_research_points(game_state)
-        new_total_fuel = count_total_fuel(game_state)
-        total_units_citytile = self.city_count + self.unit_count
+        self.unit_count[self.unit_count==0] = 1
         reward_items_dict = {
-            "city": new_city_count - self.city_count,
-            "unit": new_unit_count - self.unit_count,
-            "research": new_research_points - self.research_points,
-            # Don't penalize losing fuel at night
-            "fuel": np.maximum(new_total_fuel - self.total_fuel, 0),
-            "full_workers": np.array([
-                sum(unit.get_cargo_space_left() > 0 for unit in game_state.state["teamStates"][player]["units"].values() if unit.is_worker())
-                for player in range(2)
-            ]),
-            "step": np.ones(2, dtype=float)
+            "city": (new_city_count - self.city_count)/self.unit_count,
         }
 
         if done:
@@ -254,8 +233,6 @@ class StatefulMultiReward(FullGameRewardSpace):
             game_result_reward = np.array([0., 0.])
             self.city_count = new_city_count
             self.unit_count = new_unit_count
-            self.research_points = new_research_points
-            self.total_fuel = new_total_fuel
         reward_items_dict["game_result"] = game_result_reward
 
         assert self.weights.keys() == reward_items_dict.keys()
@@ -263,7 +240,7 @@ class StatefulMultiReward(FullGameRewardSpace):
             [self.weight_rewards(reward_items_dict[key] * w) for key, w in self.weights.items()],
             axis=0
         ).sum(axis=0)
-        return tuple(reward / total_units_citytile /max(self.positive_weight, self.negative_weight))
+        return tuple(reward / 4.0 /max(self.positive_weight, self.negative_weight))
 
     def weight_rewards(self, reward: np.ndarray) -> np.ndarray:
         reward = np.where(
@@ -281,108 +258,9 @@ class StatefulMultiReward(FullGameRewardSpace):
     def _reset(self) -> NoReturn:
         self.city_count = np.ones_like(self.city_count)
         self.unit_count = np.ones_like(self.unit_count)
-        self.research_points = np.zeros_like(self.research_points)
-        self.total_fuel = np.zeros_like(self.total_fuel)
+
 
 class AgentReward(BaseRewardSpace):
-    @staticmethod
-    def get_reward_spec() -> RewardSpec:
-        return RewardSpec(
-            reward_min=-1. / GAME_CONSTANTS["PARAMETERS"]["MAX_DAYS"],
-            reward_max=1. / GAME_CONSTANTS["PARAMETERS"]["MAX_DAYS"],
-            zero_sum=False,
-            only_once=False
-        )
-
-    def __init__(
-            self,
-            positive_weight: float = 1.,
-            negative_weight: float = 1.,
-            team_sprit: float = .3,
-            **kwargs
-    ):
-        assert positive_weight > 0.
-        assert negative_weight > 0.
-        self.positive_weight = positive_weight
-        self.negative_weight = negative_weight
-        self.team_sprit = team_sprit
-        self.weights = {
-            "fuel_increase": 1.0,
-            "night_on_city": 0.10,
-            "survived_night_cycle": 3.0,
-            "survived_game": 6.0
-        }
-        self.weights.update({key: val for key, val in kwargs.items() if key in self.weights.keys()})
-        for key in copy.copy(kwargs).keys():
-            if key in self.weights.keys():
-                del kwargs[key]
-        self.agent_states = {}
-        super(AgentReward, self).__init__(**kwargs)
-        self._reset()
-
-    def compute_rewards_and_done(self, game_state: Game, agent_id: str, team_reward: float) -> Tuple[float, bool]:
-        # check if agent still exists
-        if agent_id[0]=="c":
-            city_tile = game_state.get_city_tile(agent_id)
-            done = city_tile == None
-            return self.compute_reward(game_state, agent_id, None, city_tile, team_reward, done), done
-        else:
-            unit = game_state.get_unit(0, agent_id)
-            done = unit == None
-            return self.compute_reward(game_state, agent_id, unit, None, team_reward, done), done
-
-    def compute_reward(self, game_state: Game, agent_id: str, unit: Unit, city_tile: CityTile, team_reward: float, done: bool) -> float:
-        match_over = game_state.match_over()
-        if done:
-            self.agent_states[agent_id] = 0.
-            return self.team_sprit * team_reward
-        else:
-            fuel_old = self.agent_states[agent_id].fuel
-            if unit:
-                fuel_new = calculate_fuel(game_state, unit, None)
-                night_on_city = 1. if check_night_on_city(game_state, unit) else 0.
-            else:
-                fuel_new = calculate_fuel(game_state, None, city_tile)
-                night_on_city = 0.
-        
-            fuel_increase = max(fuel_new - fuel_old, 0.)
-            survived_night_cycle = 1. if is_new_day_cycle(game_state) and not done else 0.
-            reward_items_dict = {
-                "fuel_increase": min((fuel_increase)/ MAX_FUEL_COLLECT, 1.),
-                "night_on_city": night_on_city,
-                "survived_night_cycle": survived_night_cycle,
-                "survived_game": 1 if match_over else 0
-            }
-            self.agent_states[agent_id] = fuel_new
-
-            assert self.weights.keys() == reward_items_dict.keys()
-            agent_reward = sum([self.weight_rewards(reward_items_dict[key] * w) for key, w in self.weights.items()])
-            agent_reward = agent_reward / 393./ max(self.positive_weight, self.negative_weight)
-
-        if match_over:
-            self.agent_states[agent_id] = 0.
-            
-        return (1 - self.team_sprit) * agent_reward + self.team_sprit * team_reward
-
-
-    def weight_rewards(self, reward: np.ndarray) -> np.ndarray:
-        reward = np.where(
-            reward > 0.,
-            self.positive_weight * reward,
-            reward
-        )
-        reward = np.where(
-            reward < 0.,
-            self.negative_weight * reward,
-            reward
-        )
-        return reward
-    
-    def _reset(self) -> NoReturn:
-        self.agent_states = defaultdict(lambda : 0.)
-
-
-class DenseReward(BaseRewardSpace):
     @staticmethod
     def get_reward_spec() -> RewardSpec:
         return RewardSpec(
@@ -397,7 +275,6 @@ class DenseReward(BaseRewardSpace):
             positive_weight: float = 1.,
             negative_weight: float = 1.,
             team_sprit: float = .2,
-            team: int = 0,
             **kwargs
     ):
         assert positive_weight > 0.
@@ -407,66 +284,41 @@ class DenseReward(BaseRewardSpace):
         self.team_sprit = team_sprit
         self.weights = {
             "mine":0.0125,
-            "deposit":0.01,
-            "buildCityTile":1.0,
-            "transfer":0.0075,
-            "pillage":.0,
-            
-            "night_on_city": 0.10,
             "survived_game": 3.0,
             "dead": -3.0,
-            "game_result":8,
         }
         self.weights.update({key: val for key, val in kwargs.items() if key in self.weights.keys()})
         for key in copy.copy(kwargs).keys():
             if key in self.weights.keys():
                 del kwargs[key]
         self.agent_states = defaultdict(lambda : 0.)
-        self.team = team
-        super(DenseReward, self).__init__(**kwargs)
+        super(AgentReward, self).__init__(**kwargs)
         self._reset()
 
-    def compute_rewards_and_done(self, game_state: Game, agent_id: str, action:int, team_reward: float, match_over:bool, game_won: bool) -> Tuple[float, bool]:
+    def compute_rewards_and_done(self, game_state: Game, agent_id: str,team_reward: float, match_over:bool) -> Tuple[float, bool]:
         # check if agent still exists
         if agent_id[0]=="u":
             unit = game_state.get_unit(0, agent_id)
             done = unit == None
-            return self.compute_reward(game_state, agent_id, unit, None, action, team_reward, match_over, game_won, done), done
+            return self.compute_reward(game_state, agent_id, unit, team_reward, match_over, done), done
         return 0
     
-    def compute_reward(self, game_state: Game, agent_id: str, unit: Unit, city_tile: CityTile, action: int, team_reward:float, match_over:bool, game_won:bool, done: bool) -> float:
+    def compute_reward(self, game_state: Game, agent_id: str, unit: Unit, team_reward:float, match_over:bool, done: bool) -> float:
         fuel_old = self.agent_states[agent_id]
+        reward_items_dict = {}
         if done:
-            reward_items_dict = {
-                "buildCityTile": 1.0 if action_types[action]==SpawnCityAction else 0.,
-                "transfer": fuel_old if action_types[action]==TransferAction else 0.,
-                "pillage": 1.0 if action_types[action]==PillageAction else 0.,
-                "dead": 1.0
-            }
+            reward_items_dict["dead"] = 1
             self.agent_states[agent_id] = 0
         else:
-            if unit:
-                fuel_new = calculate_fuel(game_state, unit, None)
-                self.agent_states[agent_id] = fuel_new
-                reward_items_dict = {
-                    "mine": fuel_new -fuel_old,
-                    "deposit": fuel_old if game_state.map.get_cell_by_pos(unit.pos).is_city_tile() else 0.,
-                    "buildCityTile": 1.0 if action_types[action]==SpawnCityAction else 0.,
-                    "transfer": fuel_old - fuel_new if action_types[action]==TransferAction else 0.,
-                    "pillage": 1.0 if action_types[action]==PillageAction else 0.,
-                    
-                    "night_on_city": 1. if check_night_on_city(game_state, unit) else 0.,
-                    "survived_game": 1 if match_over else 0,
-                }
-            else:
-                reward_items_dict = {
-                }  
+            fuel_new = calculate_fuel(game_state, unit, None)
+            self.agent_states[agent_id] = fuel_new
+            reward_items_dict["mine"]: fuel_new -fuel_old
         if match_over:
-            reward_items_dict["game_result"] = 1 if game_won else -1
+            reward_items_dict["survived_game"] = 1
             # clear state
             self.agent_states[agent_id] = 0.
         agent_reward = sum([self.weight_rewards(self.weights[key] * r) for key, r in reward_items_dict.items()])
-        agent_reward = agent_reward /12./ max(self.positive_weight, self.negative_weight)
+        agent_reward = agent_reward /4./ max(self.positive_weight, self.negative_weight)
         return (1 - self.team_sprit) * agent_reward + self.team_sprit * team_reward
 
 

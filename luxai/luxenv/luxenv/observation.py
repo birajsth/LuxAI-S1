@@ -46,7 +46,7 @@ MAX_FUEL = 30 * 10 * 9
 MAX_DISTANCE_CENTER = 16
 
 
-AVAILABLE_ACTIONS = 22
+AVAILABLE_ACTIONS = 12
 NUM_AGENT_FEATURES = 15
 NUM_TEAM_FEATURES = 12
 NUM_GAME_FEATURES = 8
@@ -110,7 +110,7 @@ class Observation:
         
         assert agent_spatial.shape == self.get_agent_obs_spec().spaces["spatial"].shape
     
-        available_actions = get_available_actions(self.game, unit, city_tile, self.num_team_citytiles)
+        available_actions = get_available_actions(self.game, unit)
         return {
             "scalar": agent_scalar,
             "spatial": agent_spatial,
