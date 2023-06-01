@@ -120,9 +120,9 @@ def heuristic_actions(game, team):
                                         y=city_tile.pos.y))
                     research_points += 1
                 # SpwanUnitAction
-                # create 1 cart for every 5 units
+                # create 1 cart for every 5 units if workers >20
                 elif num_spawnable_units > 0:
-                    if num_workers / max(num_workers+num_carts, 1) < .8:
+                    if num_workers>20 and  num_workers / max(num_workers+num_carts, 1) < .8:
                         actions.append(SpawnWorkerAction(game=game,
                                         city_id=city_tile.city_id,
                                         citytile=city_tile,
