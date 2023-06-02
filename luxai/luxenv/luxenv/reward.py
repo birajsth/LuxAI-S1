@@ -318,7 +318,7 @@ class AgentReward(BaseRewardSpace):
         else:
             fuel_new = calculate_fuel(game_state, unit, None)
             self.agent_states[agent_id] = fuel_new
-            reward_items_dict["fuel_increase"]: fuel_new -fuel_old
+            reward_items_dict["fuel_increase"]: max(fuel_new -fuel_old,0)
             if game_state.map.get_cell_by_pos(unit.pos).is_city_tile():
                 reward_items_dict["deposit"]: min(fuel_old-fuel_new, 0)
             elif not game_state.is_night():
