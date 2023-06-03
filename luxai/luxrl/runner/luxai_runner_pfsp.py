@@ -65,7 +65,7 @@ class LuxAIRunner(Runner):
                 values, actions, action_log_probs, hidden_states, actions_env_player = self.collect()
 
                 # Opponents
-                _, actions_opponent, _, hidden_states_opponent, actions_env_opponent = self.collect_opponent()
+                hidden_states_opponent, actions_env_opponent = self.collect_opponent()
                 
                 actions_env = merge_actions(actions_env_player, actions_env_opponent)
                 
@@ -96,8 +96,7 @@ class LuxAIRunner(Runner):
                 data_player = next_obs_scalar, next_obs_spatial, next_available_actions, \
                       rewards, dones, values, actions, action_log_probs, hidden_states
                 
-                data_opponent = next_obs_scalar_opponent, next_obs_spatial_opponent, next_available_actions_opponent, \
-                      None, None, None, actions_opponent, None, hidden_states_opponent
+                data_opponent = next_obs_scalar_opponent, next_obs_spatial_opponent, next_available_actions_opponent, hidden_states_opponent
                 
                 # insert data into buffer
                 self.insert(data_player)
@@ -149,7 +148,7 @@ class LuxAIRunner(Runner):
 
             # clear data from buffer
             self.buffer.reset()
-            self.buffer_opponent.reset()
+            #self.buffer_opponent.reset()
 
             self.num_wins = 0
             self.total = 0
@@ -283,15 +282,15 @@ class LuxAIRunner(Runner):
         if self.use_lstm:
             hidden_state = (self.buffer_opponent.next_lstm_states_hidden, self.buffer_opponent.next_lstm_states_cell)
         if len(self.next_ids_opponent) > 0:
-            actions, action_log_probs, _, values, hidden_states = self.opponentagent.agent.policy.get_action_and_value(self.buffer_opponent.next_obs_scalar, self.buffer_opponent.next_obs_spatial,\
+            actions, hidden_states = self.opponentagent.agent.policy.predict(self.buffer_opponent.next_obs_scalar, self.buffer_opponent.next_obs_spatial,\
                                                                                                     self.buffer_opponent.next_available_actions, hidden_state)
             # rearrange actions
             # list consisting of agents actions for the env 
             actions_env = slice_array(actions.detach().cpu().numpy(), self.num_agents_opponent)
-            values = values.flatten()
-            return values, actions, action_log_probs, hidden_states, actions_env
+            del actions
+            return hidden_states, actions_env
         else:
-            return None, None, None, None, [[] for _ in range(self.num_envs)]
+            return None, [[] for _ in range(self.num_envs)]
     
     def insert(self, data):
         next_obs_scalar, next_obs_spatial, next_available_actions, \
@@ -301,9 +300,8 @@ class LuxAIRunner(Runner):
         self.buffer.nextinsert(next_obs_scalar, next_obs_spatial, next_available_actions, self.next_ids)
         
     def insert_opponent(self, data):
-        next_obs_scalar, next_obs_spatial, next_available_actions, \
-            _, _, _, _, _, hidden_states = data
-        self.buffer_opponent.ids += self.buffer_opponent.next_ids
+        next_obs_scalar, next_obs_spatial, next_available_actions, hidden_states = data
+        #self.buffer_opponent.ids += self.buffer_opponent.next_ids
         if hidden_states:
             self.buffer_opponent.update_lstm_states(hidden_states)
         self.buffer_opponent.nextinsert(next_obs_scalar, next_obs_spatial, next_available_actions, self.next_ids_opponent)

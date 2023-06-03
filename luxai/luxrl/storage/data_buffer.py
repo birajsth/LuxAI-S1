@@ -15,7 +15,7 @@ class DataBuffer(object):
     :param act_space: (gym.Space) action space for agents.
     """
 
-    def __init__(self, args, obs_space, cent_obs_space, act_space):
+    def __init__(self, args, obs_space, cent_obs_space, act_space, empty=False):
 
         self.num_envs = args.num_envs
 
@@ -35,29 +35,31 @@ class DataBuffer(object):
 
         self.device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
-        self.obs_scalar = torch.empty((0,) + self.obs_shape["scalar"], dtype=torch.float32).to(self.device)
-        self.obs_spatial = torch.empty((0,) + self.obs_shape["spatial"], dtype=torch.float32).to(self.device)
-        self.available_actions = torch.empty((0,) + self.available_actions_shape, dtype=torch.float32).to(self.device)
+        if not empty:
 
-        self.actions = torch.empty((0,) + self.act_shape, dtype=torch.float32).to(self.device)
-        self.logprobs = torch.empty((0,), dtype=torch.float32).to(self.device)
-        self.rewards = torch.empty((0,), dtype=torch.float32).to(self.device)
-        self.dones = torch.empty((0,), dtype=torch.float32).to(self.device)
-        self.values = torch.empty((0,), dtype=torch.float32).to(self.device)
+            self.obs_scalar = torch.empty((0,) + self.obs_shape["scalar"], dtype=torch.float32).to(self.device)
+            self.obs_spatial = torch.empty((0,) + self.obs_shape["spatial"], dtype=torch.float32).to(self.device)
+            self.available_actions = torch.empty((0,) + self.available_actions_shape, dtype=torch.float32).to(self.device)
 
-        if self.use_lstm:
-            self.lstm_states_hidden= torch.empty((0,) + self.lstm_states_shape, dtype=torch.float32).to(self.device)
-            self.lstm_states_cell = torch.empty((0,) + self.lstm_states_shape, dtype=torch.float32).to(self.device)
-            self.lstm_states_dict = defaultdict(lambda: None)
+            self.actions = torch.empty((0,) + self.act_shape, dtype=torch.float32).to(self.device)
+            self.logprobs = torch.empty((0,), dtype=torch.float32).to(self.device)
+            self.rewards = torch.empty((0,), dtype=torch.float32).to(self.device)
+            self.dones = torch.empty((0,), dtype=torch.float32).to(self.device)
+            self.values = torch.empty((0,), dtype=torch.float32).to(self.device)
+
+            if self.use_lstm:
+                self.lstm_states_hidden= torch.empty((0,) + self.lstm_states_shape, dtype=torch.float32).to(self.device)
+                self.lstm_states_cell = torch.empty((0,) + self.lstm_states_shape, dtype=torch.float32).to(self.device)
+                self.lstm_states_dict = defaultdict(lambda: None)
             
         
-        # to keep track of envs, episode and agents 
-        # tuple(env_id, episode, agent_id)
-        self.ids = []
-        
+            # to keep track of envs, episode and agents 
+            # tuple(env_id, episode, agent_id)
+            self.ids = []
+            
 
-        # to keep track of envs episode
-        self.episodes = [0] * self.num_envs
+            # to keep track of envs episode
+            self.episodes = [0] * self.num_envs
 
 
     def insert(self, actions, action_log_probs, value_preds, rewards, hidden_states, dones):

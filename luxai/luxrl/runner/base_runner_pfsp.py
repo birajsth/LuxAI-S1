@@ -116,7 +116,8 @@ class Runner(object):
         self.buffer_opponent = DataBuffer(self.all_args,
                                 self.playeragent.agent.get_obs_space(),
                                 share_observation_space,
-                                self.playeragent.agent.get_action_space())
+                                self.playeragent.agent.get_action_space(),
+                                empty=True)
         
 
     def run(self):
