@@ -109,7 +109,8 @@ def heuristic_actions(game, team):
             city_tile = cell.city_tile
             if city_tile and city_tile.cooldown<1:
                 # prioritize research to spawning units at night
-                if is_night and num_workers>20 and research_points<MAX_RESEARCH:
+                # research only if citytile number > map size//2
+                if is_night and num_citytiles>game.map.width//2 and research_points<MAX_RESEARCH:
                     actions.append(ResearchAction(game=game,
                                         city_id=city_tile.city_id,
                                         citytile=city_tile,
@@ -120,9 +121,9 @@ def heuristic_actions(game, team):
                                         y=city_tile.pos.y))
                     research_points += 1
                 # SpwanUnitAction
-                # create 1 cart for every 5 units if workers >20
+                # create 1 cart for every 5 units if workers > max size // 2 + 4
                 elif num_spawnable_units > 0:
-                    if num_workers>20 and  num_workers / max(num_workers+num_carts, 1) > .8:
+                    if num_workers>(game.map.width//2 + 4) and  num_workers / max(num_workers+num_carts, 1) > .8:
                         actions.append(SpawnCartAction(game=game,
                                         city_id=city_tile.city_id,
                                         citytile=city_tile,

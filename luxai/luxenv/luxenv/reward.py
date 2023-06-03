@@ -26,7 +26,6 @@ resources = {
     "uranium": 0.40
 }
 
-MAX_FUEL_COLLECT = 2 * 40
 
 
 
