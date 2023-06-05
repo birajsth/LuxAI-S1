@@ -112,7 +112,7 @@ def heuristic_actions(game, team):
                 # SpwanUnitAction
                 # create 1 cart for every 5 units if workers > max size // 2
                 if num_spawnable_units > 0:
-                    if num_workers>(game.map.width//2) and  num_workers / max(num_workers+num_carts, 1) > .8:
+                    if num_workers>(game.map.width/3) and  num_workers // max(num_workers+num_carts, 1) > .8:
                         actions.append(SpawnCartAction(game=game,
                                         city_id=city_tile.city_id,
                                         citytile=city_tile,
@@ -134,7 +134,7 @@ def heuristic_actions(game, team):
                         num_workers += 1
                     num_spawnable_units -= 1
                 # research only if citytile number > map size//2
-                elif num_citytiles>game.map.width//2 and research_points<MAX_RESEARCH:
+                elif research_points<MAX_RESEARCH:
                     actions.append(ResearchAction(game=game,
                                         city_id=city_tile.city_id,
                                         citytile=city_tile,
